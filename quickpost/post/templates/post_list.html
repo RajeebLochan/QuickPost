@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+
+{%block title %} Quick Post - Home {% endblock %}
+
+{% block content %}
+
+<h1>Welcome to Quick Post</h1>
+
+<a class="btn btn-primary" href="{% url 'post' %}"> Create a Post</a>
+
+<div class="container row gap-3">
+    {% for post in posts %}
+    <div class="card" style="width: 18rem;">
+        <img src="{{post.photo.url}}" class="card-img-top" alt="...">
+        <div class="card-body">
+          <h5 class="card-title">{{post.user.username}}</h5>
+          <p class="card-text">{{post.text}}</p>
+          <a class="btn btn-primary" href="{% url 'post' %}">Edit</a>
+          <a class="btn btn-primary" href="{% url 'post' %}">Delete</a>
+        </div>
+      </div>
+    {% endfor %}
+</div>
+
+
+
+
+
+
+
+{% endblock %}
