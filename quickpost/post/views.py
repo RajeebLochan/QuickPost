@@ -1,7 +1,8 @@
 from django.shortcuts import redirect, render
 from .models import Post
-from .forms import PostForm
-from django.contrib.auth.decorators import login_required
+from .forms import PostForm, UserRegistrationForm
+from django.contrib.auth.decorators import login_required 
+from django.contrib.auth import login, authenticate
 from django.shortcuts import get_object_or_404
 
 
@@ -18,7 +19,7 @@ def post_list(request):
     return render(request, 'post_list.html', {'posts': posts})
 
 #create post view
-# @login_required
+@login_required
 def create_post(request):
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES)
@@ -32,7 +33,7 @@ def create_post(request):
     return render(request, 'create_post.html', {'form': form})
 
 #edit post view
-# @login_required
+@login_required
 def edit_post(request, post_id):
     post = get_object_or_404(Post, id=post_id, user=request.user)
     if request.method == 'POST':
@@ -45,13 +46,30 @@ def edit_post(request, post_id):
     return render(request, 'create_post.html', {'form': form, 'post': post})
 
 #post delete view
-# @login_required
+@login_required
 def delete_post(request, post_id):
     post = get_object_or_404(Post, id=post_id, user=request.user)
     if request.method == 'POST':
         post.delete()
         return redirect('post_list')
     return render(request, 'delete_post.html', {'post': post})
+
+@login_required
+def user_registration(request):
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.set_password(form.cleaned_data['password1'])
+            user.save()
+            login(request, user)
+            return redirect('post_list')
+            
+    else:
+        form = UserRegistrationForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+
 
 
 

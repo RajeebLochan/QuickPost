@@ -7,5 +7,6 @@ urlpatterns = [
     path("edit/<int:post_id>/", views.edit_post, name="edit_post"),
     path("delete/<int:post_id>/", views.delete_post, name="delete_post"),
     path("index/", views.index, name="index"),
+    path("register/", views.user_registration, name="user_registration"),
     # Uncomment the following line to require login for all views   
 ] 
