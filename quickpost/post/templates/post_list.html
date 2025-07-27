@@ -6,26 +6,30 @@
 
 <h1>Welcome to Quick Post</h1>
 
-<a class="btn btn-primary" href="{% url 'post' %}"> Create a Post</a>
+<a class="btn btn-primary" href="{% url 'create_post' %}"> Create a Post</a>
 
 <div class="container row gap-3">
     {% for post in posts %}
-    <div class="card" style="width: 18rem;">
-        <img src="{{post.photo.url}}" class="card-img-top" alt="...">
+    <div class="card custom-card" style="width: 18rem; margin: top 10px;">
+        {% if post.photo %}
+        <img src="{{post.photo.url}}" class=" class="card-img-top img-fluid "  alt="...">
+        {% endif %}
         <div class="card-body">
-          <h5 class="card-title">{{post.user.username}}</h5>
-          <p class="card-text">{{post.text}}</p>
-          <a class="btn btn-primary" href="{% url 'post' %}">Edit</a>
-          <a class="btn btn-primary" href="{% url 'post' %}">Delete</a>
+          <h5 class="card-title">
+            {% if post.user and post.user.username %}
+              {{ post.user.username }}
+            {% else %}
+              Anonymous
+            {% endif %}
+          </h5>
+          <p class="card-text">{{post.content}}</p>
+          <div>
+            <a class="btn btn-primary" href="{% url 'edit_post' post.id %}">Edit</a>
+            <a class="btn btn-primary" href="{% url 'delete_post' post.id %}">Delete</a>
+          </div>
         </div>
       </div>
     {% endfor %}
 </div>
-
-
-
-
-
-
 
 {% endblock %}
