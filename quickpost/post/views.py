@@ -42,7 +42,7 @@ def edit_post(request, post_id):
             return redirect('post_list')
     else:
         form = PostForm(instance=post)
-    return render(request, 'edit_post.html', {'form': form, 'post': post})
+    return render(request, 'create_post.html', {'form': form, 'post': post})
 
 #post delete view
 # @login_required
