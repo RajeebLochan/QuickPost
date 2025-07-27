@@ -54,16 +54,16 @@ def delete_post(request, post_id):
         return redirect('post_list')
     return render(request, 'delete_post.html', {'post': post})
 
-@login_required
-def user_registration(request):
+
+def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password1'])
-            user.save()
-            login(request, user)
-            return redirect('post_list')
+            user = form.save()
+            # user.set_password(form.cleaned_data['password1'])
+            # user.save()
+            # login(request, user)
+            return redirect('login')
             
     else:
         form = UserRegistrationForm()
