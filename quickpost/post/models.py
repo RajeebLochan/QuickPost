@@ -14,5 +14,3 @@ def __str__(self):
     # limiting the content to 20 characters for better readability
     return f"{self.user.username} - {self.content[:20]}"
 
-
-

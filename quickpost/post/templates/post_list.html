@@ -24,9 +24,13 @@
           </h5>
           <p class="card-text">{{post.content}}</p>
           <div>
+            {% if post.user  == user %}
             <a class="btn btn-primary" href="{% url 'edit_post' post.id %}">Edit</a>
             <a class="btn btn-primary" href="{% url 'delete_post' post.id %}">Delete</a>
+            {% endif %} 
           </div>
+          this is a post created by {{ post.user.username }} on {{ post.created_at|date:"Y-m-d H:i" }}
+          <div>
         </div>
       </div>
     {% endfor %}
