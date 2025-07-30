@@ -74,6 +74,13 @@ def register(request):
 def home(request):
     return render(request, 'index.html')
 
+def profile(request):
+    if request.user.is_authenticated:
+        posts = Post.objects.filter(user=request.user).order_by('-created_at')
+        return render(request, 'profile.html', {'posts': posts})
+    else:
+        return redirect('login')
+
 
 
 
