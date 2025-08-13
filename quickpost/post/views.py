@@ -1,11 +1,12 @@
 from django.shortcuts import redirect, render
-from .models import Post 
+from .models import Post , Comment
 from .forms import PostForm, UserRegistrationForm
 from django.contrib.auth.decorators import login_required 
 from django.contrib.auth import login, authenticate
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 # @login_required
 # Create your views here.
@@ -128,3 +129,22 @@ def dislike_post(request, post_id):
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 
+@login_required
+def add_comment(request, post_id):
+    if request.method == "POST":
+        post = Post.objects.get(id=post_id)
+        content = request.POST.get("content")
+        if content.strip():
+            comment = Comment.objects.create(
+                post=post,
+                user=request.user,
+                content=content
+            )
+            return JsonResponse({
+                "success": True,
+                "comment_user": comment.user.username,
+                "comment_content": comment.content,
+                "comment_time": comment.created_at.strftime("%b %d, %Y %H:%M"),
+                "comments_count": post.comments.count()
+            })
+    return JsonResponse({"success": False})

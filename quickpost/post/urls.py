@@ -11,4 +11,5 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),  # Assuming you have a profile view   
     path('like/<int:post_id>/', views.like_post, name='like_post'),  # Assuming you have a like post view
     path('dislike/<int:post_id>/', views.dislike_post, name='dislike_post'),  # Assuming you have a dislike post view
+    path('comment/<int:post_id>/', views.add_comment, name='add_comment'),  # Assuming you have a comment view
 ]

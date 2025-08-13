@@ -2,43 +2,83 @@
 {% block title %}Quick Post - Home{% endblock %}
 
 {% block content %}
-<div class="container mt-4" style="max-width: 650px;">
+<div class="container mt-4" style="max-width: 700px;">
   {% for post in posts %}
-  <div class="card bg-dark text-light shadow-lg rounded-4 border-secondary mb-4">
+  <div class="card bg-dark text-light shadow-lg rounded-4 border-0 mb-4 overflow-hidden">
+
     {% if post.photo %}
-    <img src="{{ post.photo.url }}" class="card-img-top img-fluid" alt="Post Image">
+    <div class="position-relative">
+      <img src="{{ post.photo.url }}" class="card-img-top img-fluid" alt="Post Image"
+        style="object-fit: cover; max-height: 400px;">
+    </div>
     {% endif %}
+
     <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="mb-0">
-          {% if post.user and post.user.username %}
-          {{ post.user.username }}
-          {% else %}
-          Anonymous
-          {% endif %}
-        </h5>
-        <small class="text-muted">{{ post.created_at|date:"M d, Y H:i" }}</small>
+      <!-- Post Header -->
+      <div class="d-flex align-items-center mb-3">
+        <div class="me-3">
+          <img src="https://ui-avatars.com/api/?name={{ post.user.username }}&background=random"
+            class="rounded-circle border border-secondary" alt="Avatar" width="45" height="45">
+        </div>
+        <div>
+          <h6 class="mb-0 fw-bold">
+            {% if post.user and post.user.username %}
+            {{ post.user.username }}
+            {% else %}
+            Anonymous
+            {% endif %}
+          </h6>
+          <small class="text-muted">{{ post.created_at|date:"M d, Y H:i" }}</small>
+        </div>
       </div>
-      <p class="card-text">{{ post.content }}</p>
 
-      <div class="d-flex gap-3 align-items-center">
-        <button class="btn btn-sm {% if user in post.likes.all %}btn-success{% else %}btn-outline-light{% endif %} like-btn" 
-            data-url="{% url 'like_post' post.id %}" 
-            data-post-id="{{ post.id }}">
-        ❤️ <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
-    </button>
+      <!-- Post Content -->
+      <p class="card-text fs-6">{{ post.content }}</p>
 
-    <button class="btn btn-sm {% if user in post.dislikes.all %}btn-danger{% else %}btn-outline-light{% endif %} dislike-btn" 
-            data-url="{% url 'dislike_post' post.id %}" 
-            data-post-id="{{ post.id }}">
-        👎 <span id="dislike-count-{{ post.id }}">{{ post.dislikes.count }}</span>
-    </button>
-
-        <!-- Comment Button -->
-        <button class="btn btn-sm btn-outline-info">
-          💬 Comment
+      <!-- Actions -->
+      <div class="d-flex gap-3 align-items-center border-top border-secondary pt-3">
+        <button
+          class="btn btn-sm px-3 rounded-pill {% if user in post.likes.all %}btn-success{% else %}btn-outline-light{% endif %} like-btn"
+          data-url="{% url 'like_post' post.id %}" data-post-id="{{ post.id }}">
+          ❤️ <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
         </button>
+
+        <button
+          class="btn btn-sm px-3 rounded-pill {% if user in post.dislikes.all %}btn-danger{% else %}btn-outline-light{% endif %} dislike-btn"
+          data-url="{% url 'dislike_post' post.id %}" data-post-id="{{ post.id }}">
+          👎 <span id="dislike-count-{{ post.id }}">{{ post.dislikes.count }}</span>
+        </button>
+
+        <button class="btn btn-sm px-3 rounded-pill btn-outline-info comment-toggle" data-post-id="{{ post.id }}">
+          💬 <span id="comment-count-{{ post.id }}">{{ post.comments.count }}</span>
+        </button>
+
       </div>
+
+      <!-- Comment Section -->
+      <div class="comment-section mt-3 d-none" id="comments-{{ post.id }}">
+        <div class="existing-comments mb-2">
+          {% for comment in post.comments.all %}
+          <div class="p-2 mb-1 bg-secondary bg-opacity-10 rounded-3">
+            <strong>{{ comment.user.username }}</strong>: {{ comment.content }}
+            <small class="text-muted d-block">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+          </div>
+          {% empty %}
+          <p class="text-muted">No comments yet.</p>
+          {% endfor %}
+        </div>
+
+        <!-- Add Comment Form -->
+        <form class="add-comment-form" data-url="{% url 'add_comment' post.id %}" data-post-id="{{ post.id }}">
+          {% csrf_token %}
+          <div class="input-group input-group-sm">
+            <input type="text" name="content" class="form-control rounded-start-pill" placeholder="Write a comment...">
+            <button class="btn btn-primary rounded-end-pill">Post</button>
+          </div>
+        </form>
+
+      </div>
+
     </div>
   </div>
   {% empty %}
@@ -48,65 +88,146 @@
 
 <style>
   body {
-    background-color: #121212;
+    background-color: #0d0d0d;
+    font-family: 'Inter', sans-serif;
   }
 
   .card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
   }
 
   .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+    transform: translateY(-4px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+  }
+
+  .btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .btn-outline-info:hover {
+    background-color: rgba(13, 202, 240, 0.1);
+  }
+
+  .comment-section {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.addEventListener("DOMContentLoaded", function() {
+// Add comment
+document.querySelectorAll(".add-comment-form").forEach(form => {
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const url = this.dataset.url;
+        const postId = this.dataset.postId;
+        const formData = new FormData(this);
 
-    function handleAction(buttonClass, countPrefix) {
-        document.querySelectorAll(buttonClass).forEach(button => {
-            button.addEventListener("click", function() {
-                const url = this.dataset.url;
-                const postId = this.dataset.postId;
+        fetch(url, {
+            method: "POST",
+            headers: { "X-CSRFToken": formData.get("csrfmiddlewaretoken") },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const commentList = this.closest(".comment-section").querySelector(".existing-comments");
+                const newComment = document.createElement("div");
+                newComment.classList.add("p-2", "mb-1", "bg-secondary", "bg-opacity-10", "rounded-3");
+                newComment.innerHTML = `<strong>${data.comment_user}</strong>: ${data.comment_content}
+                                        <small class="text-muted d-block">${data.comment_time}</small>`;
+                commentList.appendChild(newComment);
+                document.getElementById(`comment-count-${postId}`).textContent = data.comments_count;
+                this.reset();
+            }
+        });
+    });
+});
 
-                fetch(url, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": "{{ csrf_token }}",
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.likes_count !== undefined) {
-                        document.getElementById(`like-count-${postId}`).textContent = data.likes_count;
-                    }
-                    if (data.dislikes_count !== undefined) {
-                        document.getElementById(`dislike-count-${postId}`).textContent = data.dislikes_count;
-                    }
+  document.addEventListener("DOMContentLoaded", function () {
+    // Toggle comments
+    document.querySelectorAll(".comment-toggle").forEach(btn => {
+      btn.addEventListener("click", function () {
+        const postId = this.dataset.postId;
+        document.getElementById(`comments-${postId}`).classList.toggle("d-none");
+      });
+    });
 
-                    // Toggle active states
-                    document.querySelector(`.like-btn[data-post-id="${postId}"]`)
-                        .classList.toggle("btn-success", data.liked);
-                    document.querySelector(`.like-btn[data-post-id="${postId}"]`)
-                        .classList.toggle("btn-outline-light", !data.liked);
+    // Add comment
+    document.querySelectorAll(".add-comment-form").forEach(form => {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const postId = this.dataset.postId;
+        const formData = new FormData(this);
 
-                    document.querySelector(`.dislike-btn[data-post-id="${postId}"]`)
-                        .classList.toggle("btn-danger", data.disliked);
-                    document.querySelector(`.dislike-btn[data-post-id="${postId}"]`)
-                        .classList.toggle("btn-outline-light", !data.disliked);
-                })
-                .catch(err => console.error(err));
+        fetch(`/comment/${postId}/`, {
+          method: "POST",
+          headers: { "X-CSRFToken": formData.get("csrfmiddlewaretoken") },
+          body: formData
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              const commentList = this.closest(".comment-section").querySelector(".existing-comments");
+              const newComment = document.createElement("div");
+              newComment.classList.add("p-2", "mb-1", "bg-secondary", "bg-opacity-10", "rounded-3");
+              newComment.innerHTML = `<strong>${data.comment_user}</strong>: ${data.comment_content}
+                                            <small class="text-muted d-block">${data.comment_time}</small>`;
+              commentList.appendChild(newComment);
+
+              document.getElementById(`comment-count-${postId}`).textContent = data.comments_count;
+              this.reset();
+            }
+          });
+      });
+    });
+
+    // Like / Dislike actions
+    function handleAction(buttonClass) {
+      document.querySelectorAll(buttonClass).forEach(button => {
+        button.addEventListener("click", function () {
+          const url = this.dataset.url;
+          const postId = this.dataset.postId;
+
+          fetch(url, {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": "{{ csrf_token }}",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({})
+          })
+            .then(res => res.json())
+            .then(data => {
+              document.getElementById(`like-count-${postId}`).textContent = data.likes_count;
+              document.getElementById(`dislike-count-${postId}`).textContent = data.dislikes_count;
+
+              const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
+              likeBtn.classList.toggle("btn-success", data.liked);
+              likeBtn.classList.toggle("btn-outline-light", !data.liked);
+
+              const dislikeBtn = document.querySelector(`.dislike-btn[data-post-id="${postId}"]`);
+              dislikeBtn.classList.toggle("btn-danger", data.disliked);
+              dislikeBtn.classList.toggle("btn-outline-light", !data.disliked);
             });
         });
+      });
     }
 
-    handleAction(".like-btn", "like-count");
-    handleAction(".dislike-btn", "dislike-count");
-});
+    handleAction(".like-btn");
+    handleAction(".dislike-btn");
+  });
 </script>
 {% endblock %}
