@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
-
+from django.http import JsonResponse
 
 # @login_required
 # Create your views here.
@@ -74,6 +74,7 @@ def register(request):
 def home(request):
     return render(request, 'index.html')
 
+
 def profile(request):
     if request.user.is_authenticated:
         posts = Post.objects.filter(user=request.user).order_by('-created_at')
@@ -81,6 +82,49 @@ def profile(request):
     else:
         return redirect('login')
 
+@login_required
+def like_post(request, post_id):
+    if request.method == "POST":
+        post = Post.objects.get(id=post_id)
+        liked = False
 
+        if request.user in post.likes.all():
+            post.likes.remove(request.user)
+        else:
+            post.likes.add(request.user)
+            liked = True
 
+        return JsonResponse({
+            "liked": liked,
+            "likes_count": post.likes.count()
+        })
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+@login_required
+def dislike_post(request, post_id):
+    if request.method == "POST":
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return JsonResponse({"error": "Post not found"}, status=404)
+
+        disliked = False
+
+        if request.user in post.dislikes.all():
+            post.dislikes.remove(request.user)
+        else:
+            post.dislikes.add(request.user)
+            disliked = True
+            # Remove like if it exists
+            if request.user in post.likes.all():
+                post.likes.remove(request.user)
+
+        return JsonResponse({
+            "disliked": disliked,
+            "dislikes_count": post.dislikes.count(),
+            "likes_count": post.likes.count()
+        })
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
 

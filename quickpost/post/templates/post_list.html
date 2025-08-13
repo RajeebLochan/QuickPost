@@ -1,39 +1,112 @@
 {% extends "layout.html" %}
-
-{%block title %} Quick Post - Home {% endblock %}
+{% block title %}Quick Post - Home{% endblock %}
 
 {% block content %}
-
-<h1>Welcome to Quick Post</h1>
-
-<a class="btn btn-primary" href="{% url 'create_post' %}"> Create a Post</a>
-
-<div class="container row gap-3">
-    {% for post in posts %}
-    <div class="card custom-card" style="width: 18rem; margin: top 10px;">
-        {% if post.photo %}
-        <img src="{{post.photo.url}}" class=" class="card-img-top img-fluid "  alt="...">
-        {% endif %}
-        <div class="card-body">
-          <h5 class="card-title">
-            {% if post.user and post.user.username %}
-              {{ post.user.username }}
-            {% else %}
-              Anonymous
-            {% endif %}
-          </h5>
-          <p class="card-text">{{post.content}}</p>
-          <div>
-            {% if post.user  == user %}
-            <a class="btn btn-primary" href="{% url 'edit_post' post.id %}">Edit</a>
-            <a class="btn btn-primary" href="{% url 'delete_post' post.id %}">Delete</a>
-            {% endif %} 
-          </div>
-          this is a post created by {{ post.user.username }} on {{ post.created_at|date:"Y-m-d H:i" }}
-          <div>
-        </div>
+<div class="container mt-4" style="max-width: 650px;">
+  {% for post in posts %}
+  <div class="card bg-dark text-light shadow-lg rounded-4 border-secondary mb-4">
+    {% if post.photo %}
+    <img src="{{ post.photo.url }}" class="card-img-top img-fluid" alt="Post Image">
+    {% endif %}
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">
+          {% if post.user and post.user.username %}
+          {{ post.user.username }}
+          {% else %}
+          Anonymous
+          {% endif %}
+        </h5>
+        <small class="text-muted">{{ post.created_at|date:"M d, Y H:i" }}</small>
       </div>
-    {% endfor %}
+      <p class="card-text">{{ post.content }}</p>
+
+      <div class="d-flex gap-3 align-items-center">
+        <button class="btn btn-sm {% if user in post.likes.all %}btn-success{% else %}btn-outline-light{% endif %} like-btn" 
+            data-url="{% url 'like_post' post.id %}" 
+            data-post-id="{{ post.id }}">
+        ❤️ <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
+    </button>
+
+    <button class="btn btn-sm {% if user in post.dislikes.all %}btn-danger{% else %}btn-outline-light{% endif %} dislike-btn" 
+            data-url="{% url 'dislike_post' post.id %}" 
+            data-post-id="{{ post.id }}">
+        👎 <span id="dislike-count-{{ post.id }}">{{ post.dislikes.count }}</span>
+    </button>
+
+        <!-- Comment Button -->
+        <button class="btn btn-sm btn-outline-info">
+          💬 Comment
+        </button>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <p class="text-secondary text-center">No posts yet. Be the first to share something!</p>
+  {% endfor %}
 </div>
 
+<style>
+  body {
+    background-color: #121212;
+  }
+
+  .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    function handleAction(buttonClass, countPrefix) {
+        document.querySelectorAll(buttonClass).forEach(button => {
+            button.addEventListener("click", function() {
+                const url = this.dataset.url;
+                const postId = this.dataset.postId;
+
+                fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.likes_count !== undefined) {
+                        document.getElementById(`like-count-${postId}`).textContent = data.likes_count;
+                    }
+                    if (data.dislikes_count !== undefined) {
+                        document.getElementById(`dislike-count-${postId}`).textContent = data.dislikes_count;
+                    }
+
+                    // Toggle active states
+                    document.querySelector(`.like-btn[data-post-id="${postId}"]`)
+                        .classList.toggle("btn-success", data.liked);
+                    document.querySelector(`.like-btn[data-post-id="${postId}"]`)
+                        .classList.toggle("btn-outline-light", !data.liked);
+
+                    document.querySelector(`.dislike-btn[data-post-id="${postId}"]`)
+                        .classList.toggle("btn-danger", data.disliked);
+                    document.querySelector(`.dislike-btn[data-post-id="${postId}"]`)
+                        .classList.toggle("btn-outline-light", !data.disliked);
+                })
+                .catch(err => console.error(err));
+            });
+        });
+    }
+
+    handleAction(".like-btn", "like-count");
+    handleAction(".dislike-btn", "dislike-count");
+});
+</script>
 {% endblock %}

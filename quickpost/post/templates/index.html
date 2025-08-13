@@ -25,9 +25,16 @@
         <div class="collapse navbar-collapse" id="navLinks">
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'register' %}">Sign Up</a>
+              {% if user.is_authenticated %}
+              <form action="{% url 'logout' %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-link nav-link">Logout</button>
+              </form>
+              {% else %}
+              <li><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+              <li><a class="nav-link" href="{% url 'register' %}">Register</a></li>
+              {% endif %}
             </li>
-            <a class="nav-link active" href="{% url 'login' %}">Login</a>
           </ul>
         </div>
       </div>
