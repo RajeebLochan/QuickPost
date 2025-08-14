@@ -44,7 +44,12 @@
           </div>
         </div>
       </nav> -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark" style="
+  background-color: #333;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+">
     <div class="container-fluid">
       <a class="navbar-brand" href="{% url 'post_list' %}">QuickPost</a>
 
@@ -81,7 +86,7 @@
 
   <div class="container">{% block content %}
 
-  this is quick post to share your thoughts {% endblock %}</div>
+    this is quick post to share your thoughts {% endblock %}</div>
   {% block scripts %}{% endblock %}
 </body>
 
