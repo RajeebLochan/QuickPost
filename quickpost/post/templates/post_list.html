@@ -17,9 +17,16 @@
       <!-- Post Header -->
       <div class="d-flex align-items-center mb-3">
         <div class="me-3">
-          <img src="https://ui-avatars.com/api/?name={{ post.user.username }}&background=random"
-            class="rounded-circle border border-secondary" alt="Avatar" width="45" height="45">
+          <a href="{% url 'profile' post.user.username %}">
+            <img 
+              src="https://ui-avatars.com/api/?name={{ post.user.username }}&background=random"
+              class="rounded-circle border border-secondary"
+              alt="Avatar"
+              width="45"
+              height="45">
+          </a>
         </div>
+        
         <div>
           <h6 class="mb-0 fw-bold">
             {% if post.user and post.user.username %}

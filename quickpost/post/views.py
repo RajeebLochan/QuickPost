@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-
+from django.contrib.auth.models import User
 # @login_required
 # Create your views here.
 def index(request):
@@ -76,12 +76,23 @@ def home(request):
     return render(request, 'index.html')
 
 
-def profile(request):
-    if request.user.is_authenticated:
-        posts = Post.objects.filter(user=request.user).order_by('-created_at')
-        return render(request, 'profile.html', {'posts': posts})
-    else:
-        return redirect('login')
+# def profile(request):
+#     if request.user.is_authenticated:
+
+#         posts = Post.objects.filter(user=request.user).order_by('-created_at')
+#         return render(request, 'profile.html', {'posts': posts})
+#     else:
+#         return redirect('login')
+@login_required
+def profile(request, username):
+    user = get_object_or_404(User, username=username)
+    posts = Post.objects.filter(user=user).order_by('-created_at')
+    
+    context = {
+        'profile_user': user,
+        'posts': posts,
+    }
+    return render(request, 'profile.html', context)
 
 @login_required
 def like_post(request, post_id):
