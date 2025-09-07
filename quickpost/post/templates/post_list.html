@@ -2,6 +2,33 @@
 {% block title %}Quick Post - Home{% endblock %}
 
 {% block content %}
+
+<!-- Debug - remove after testing -->
+{% if daily_quote %}
+  <p>Debug: Quote exists - {{ daily_quote.text }}</p>
+{% else %}
+  <p>Debug: No daily_quote in context</p>
+{% endif %}
+
+<div id="daily-quote" role="region" aria-label="Quote of the day" class="quote-card">
+  <div class="quote-header">
+    <span class="badge">Quote of the Day</span>
+    <button id="dismiss-quote" aria-label="Dismiss quote" class="dismiss-btn">✕</button>
+  </div>
+
+  <div class="quote-body">
+    <p class="quote-text">“{{ daily_quote.text }}”</p>
+    <p class="quote-author">— {{ daily_quote.author }}</p>
+  </div>
+ 
+
+  <div class="quote-actions">
+    
+    <button class="btn btn-ghost" id="share-quote" aria-label="Share quote">🔗 Share</button>
+    
+  </div>
+</div>
+
 <div class="container mt-4" style="max-width: 700px;">
   {% for post in posts %}
   <div class="card bg-dark text-light shadow-lg rounded-4 border-0 mb-4 overflow-hidden">
@@ -129,12 +156,55 @@
       opacity: 1;
     }
   }
+  .quote-card {
+  margin: 18px auto;
+  max-width: 820px;        /* match feed width */
+  background: rgba(40, 44, 48, 0.95); /* slightly different shade */
+  border-left: 4px solid #2b6ef6; /* accent color */
+  padding: 14px 18px;
+  border-radius: 12px;
+  color: #e6eef6;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+.quote-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.badge { font-weight:600; font-size:0.85rem; opacity:0.85; }
+.dismiss-btn { background:none; border:none; color:#cbd5e1; font-size:1.05rem; cursor:pointer; }
+
+.quote-text { font-style:italic; font-size:1.05rem; text-align:center; margin:8px 4px; }
+.quote-author { text-align:right; font-weight:600; font-size:0.9rem; opacity:0.85; margin-top:6px; }
+
+.quote-actions { display:flex; gap:10px; justify-content:center; margin-top:10px; }
+.btn-ghost { background:transparent; border:1px solid rgba(255,255,255,0.06); padding:6px 10px; border-radius:8px; color:inherit; cursor:pointer; }
+
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
 // Add comment
+document.getElementById('dismiss-quote').addEventListener('click', (e) => {
+    const card = document.getElementById('daily-quote');
+    card.style.display = 'none';
+    sessionStorage.setItem('quote-dismissed', '1');
+  });
+
+  // Hide if previously dismissed
+  if (sessionStorage.getItem('quote-dismissed') === '1') {
+    const c = document.getElementById('daily-quote');
+    if (c) c.style.display = 'none';
+  }
+
+  // Share (simple copy)
+  document.getElementById('share-quote').addEventListener('click', async () => {
+    const text = `"${document.querySelector('.quote-text').innerText}" — ${document.querySelector('.quote-author').innerText}`;
+    if (navigator.share) {
+      navigator.share({ text }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(text);
+      alert('Quote copied to clipboard');
+    }
+  });
 document.querySelectorAll(".add-comment-form").forEach(form => {
     form.addEventListener("submit", function(e) {
         e.preventDefault();

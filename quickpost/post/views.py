@@ -8,6 +8,8 @@ from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
+import datetime
+from django.core.cache import cache
 # @login_required
 # Create your views here.
 def index(request):
@@ -17,8 +19,14 @@ def index(request):
 #post list view
 # @login_required
 def post_list(request):
+    # Add daily quote logic
+    quotes_cached = cache.get("daily_quote")
+    if not quotes_cached:
+        quotes_cached = get_daily_quote()
+        cache.set("daily_quote", quotes_cached, timeout=24*3600)  # 24 hours
+    
     posts = Post.objects.all().order_by('-created_at')
-    return render(request, 'post_list.html', {'posts': posts})
+    return render(request, 'post_list.html', {'posts': posts, 'daily_quote': quotes_cached})
 
 #create post view
 @login_required
@@ -159,3 +167,46 @@ def add_comment(request, post_id):
                 "comments_count": post.comments.count()
             })
     return JsonResponse({"success": False})
+
+QUOTES = [
+    ("Do small things with great love.", "Mother Teresa"),
+    ("Stay hungry, stay foolish.", "Steve Jobs"),
+    ("The best way to predict the future is to invent it.", "Alan Kay"),
+    ("In the middle of every difficulty lies opportunity.", "Albert Einstein"),
+    ("What we think, we become.", "Buddha"),
+    ("Happiness is not something ready made. It comes from your own actions.", "Dalai Lama"),
+    ("The only way to do great work is to love what you do.", "Steve Jobs"),
+    ("Life is what happens when you're busy making other plans.", "John Lennon"),
+    ("You must be the change you wish to see in the world.", "Mahatma Gandhi"),
+    ("Believe you can and you're halfway there.", "Theodore Roosevelt"),
+    ("Act as if what you do makes a difference. It does.", "William James"),
+    ("Success is not final, failure is not fatal: It is the courage to continue that counts.", "Winston Churchill"),
+    ("It does not matter how slowly you go as long as you do not stop.", "Confucius"),
+    ("Everything you’ve ever wanted is on the other side of fear.", "George Addair"),
+    ("The only limit to our realization of tomorrow will be our doubts of today.", "Franklin D. Roosevelt"),
+    ("The future belongs to those who believe in the beauty of their dreams.", "Eleanor Roosevelt"),
+    ("Do what you can, with what you have, where you are.", "Theodore Roosevelt"),
+    ("You are never too old to set another goal or to dream a new dream.", "C.S. Lewis"),
+    ("It always seems impossible until it's done.", "Nelson Mandela"),
+    ("Keep your face always toward the sunshine—and shadows will fall behind you.", "Walt Whitman"),
+]
+
+def get_daily_quote():
+    # deterministic by date so all users see the same quote for the day
+    today = datetime.date.today()
+    if not QUOTES:
+        return {"text": "", "author": "", "date": today}
+    index = today.toordinal() % len(QUOTES)
+    return {"text": QUOTES[index][0], "author": QUOTES[index][1], "date": today}
+
+def feed(request):
+    quotes_cached = cache.get("daily_quote")
+    if not quotes_cached:
+        quotes_cached = get_daily_quote()
+        cache.set("daily_quote", quotes_cached, timeout=24*3600)  # 24 hours
+    posts = Post.objects.all().order_by("-created_at")
+    
+    # Debug line - remove after testing
+    print(f"Daily quote: {quotes_cached}")
+    
+    return render(request, "post_list.html", {"posts": posts, "daily_quote": quotes_cached})
