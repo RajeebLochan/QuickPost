@@ -3,13 +3,6 @@
 
 {% block content %}
 
-<!-- Debug - remove after testing -->
-{% if daily_quote %}
-  <p>Debug: Quote exists - {{ daily_quote.text }}</p>
-{% else %}
-  <p>Debug: No daily_quote in context</p>
-{% endif %}
-
 <div id="daily-quote" role="region" aria-label="Quote of the day" class="quote-card">
   <div class="quote-header">
     <span class="badge">Quote of the Day</span>

@@ -199,14 +199,4 @@ def get_daily_quote():
     index = today.toordinal() % len(QUOTES)
     return {"text": QUOTES[index][0], "author": QUOTES[index][1], "date": today}
 
-def feed(request):
-    quotes_cached = cache.get("daily_quote")
-    if not quotes_cached:
-        quotes_cached = get_daily_quote()
-        cache.set("daily_quote", quotes_cached, timeout=24*3600)  # 24 hours
-    posts = Post.objects.all().order_by("-created_at")
-    
-    # Debug line - remove after testing
-    print(f"Daily quote: {quotes_cached}")
-    
-    return render(request, "post_list.html", {"posts": posts, "daily_quote": quotes_cached})
+
