@@ -8,8 +8,13 @@ from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
-import datetime
 from django.core.cache import cache
+from google import genai
+import os
+from dotenv import load_dotenv
+import re
+import time
+load_dotenv()
 # @login_required
 # Create your views here.
 def index(request):
@@ -19,14 +24,25 @@ def index(request):
 #post list view
 # @login_required
 def post_list(request):
-    # Add daily quote logic
-    quotes_cached = cache.get("daily_quote")
-    if not quotes_cached:
-        quotes_cached = get_daily_quote()
-        cache.set("daily_quote", quotes_cached, timeout=24*3600)  # 24 hours
+    """
+    Display a list of posts and a daily quote.
+    The daily quote is generated and cached for 12 hours to reduce API calls and improve performance.
+    """
+    # get the quote from quote function and put it in the cache for 12 hours
+    quote = cache.get('daily_quote')
+    if not quote:
+        quote = get_daily_quote()
+        cache.set('daily_quote', quote, 43200)  # Cache for 12 hours (43200 seconds)
+    
+    # Parse the quote into text and author
+    quote_parts = quote.split(' - ', 1)
+    quote_obj = {
+        'text': quote_parts[0],
+        'author': quote_parts[1] if len(quote_parts) > 1 else 'Unknown'
+    }
     
     posts = Post.objects.all().order_by('-created_at')
-    return render(request, 'post_list.html', {'posts': posts, 'daily_quote': quotes_cached})
+    return render(request, 'post_list.html', {'posts': posts, 'daily_quote': quote_obj})
 
 #create post view
 @login_required
@@ -168,35 +184,23 @@ def add_comment(request, post_id):
             })
     return JsonResponse({"success": False})
 
-QUOTES = [
-    ("Do small things with great love.", "Mother Teresa"),
-    ("Stay hungry, stay foolish.", "Steve Jobs"),
-    ("The best way to predict the future is to invent it.", "Alan Kay"),
-    ("In the middle of every difficulty lies opportunity.", "Albert Einstein"),
-    ("What we think, we become.", "Buddha"),
-    ("Happiness is not something ready made. It comes from your own actions.", "Dalai Lama"),
-    ("The only way to do great work is to love what you do.", "Steve Jobs"),
-    ("Life is what happens when you're busy making other plans.", "John Lennon"),
-    ("You must be the change you wish to see in the world.", "Mahatma Gandhi"),
-    ("Believe you can and you're halfway there.", "Theodore Roosevelt"),
-    ("Act as if what you do makes a difference. It does.", "William James"),
-    ("Success is not final, failure is not fatal: It is the courage to continue that counts.", "Winston Churchill"),
-    ("It does not matter how slowly you go as long as you do not stop.", "Confucius"),
-    ("Everything you’ve ever wanted is on the other side of fear.", "George Addair"),
-    ("The only limit to our realization of tomorrow will be our doubts of today.", "Franklin D. Roosevelt"),
-    ("The future belongs to those who believe in the beauty of their dreams.", "Eleanor Roosevelt"),
-    ("Do what you can, with what you have, where you are.", "Theodore Roosevelt"),
-    ("You are never too old to set another goal or to dream a new dream.", "C.S. Lewis"),
-    ("It always seems impossible until it's done.", "Nelson Mandela"),
-    ("Keep your face always toward the sunshine—and shadows will fall behind you.", "Walt Whitman"),
-]
+
 
 def get_daily_quote():
-    # deterministic by date so all users see the same quote for the day
-    today = datetime.date.today()
-    if not QUOTES:
-        return {"text": "", "author": "", "date": today}
-    index = today.toordinal() % len(QUOTES)
-    return {"text": QUOTES[index][0], "author": QUOTES[index][1], "date": today}
-
-
+    """
+    Fetches a single inspirational quote from the Gemini API.
+    """
+    try:
+        client = genai.Client(api_key=os.getenv("gemini_api_key"))
+        response = client.models.generate_content(
+            model="gemini-2.0-flash", 
+            contents="write only one quote. Generate a short, impactful one-line quote with a life lesson inspired by the Ramayana and Mahabharata. Keep it clear, simple, and timeless. End with a hyphen followed by the name of the character who said it (e.g., Bhishma, Hanuman, Arjuna, Karna, Draupadi, Rama, Krishna, Sita, etc.). Vary the themes (dharma, truth, courage, devotion, humility, ego, patience)."
+        )
+        quote = response.text.strip()
+        # Remove any unwanted characters or formatting
+        quote = re.sub(r'\s+', ' ', quote)
+        return quote
+    except Exception as e:
+        print(f"Error generating quote: {e}")
+        # Return a fallback quote in case of API failure
+        return "True courage is facing danger when you are afraid. - Krishna"
