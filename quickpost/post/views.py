@@ -13,7 +13,7 @@ from google import genai
 import os
 from dotenv import load_dotenv
 import re
-import time
+
 load_dotenv()
 # @login_required
 # Create your views here.
@@ -26,13 +26,15 @@ def index(request):
 def post_list(request):
     """
     Display a list of posts and a daily quote.
-    The daily quote is generated and cached for 12 hours to reduce API calls and improve performance.
+    The daily quote is automatically refreshed every 12 hours by APScheduler.
     """
-    # get the quote from quote function and put it in the cache for 12 hours
+    # Get the quote from cache (APScheduler refreshes it every 12 hours)
     quote = cache.get('daily_quote')
+    
+    # Fallback in case scheduler hasn't run yet or cache is empty
     if not quote:
         quote = get_daily_quote()
-        cache.set('daily_quote', quote, 43200)  # Cache for 12 hours (43200 seconds)
+        cache.set('daily_quote', quote, None)  # No expiration, scheduler handles refresh
     
     # Parse the quote into text and author
     quote_parts = quote.split(' - ', 1)
@@ -193,7 +195,7 @@ def get_daily_quote():
     try:
         client = genai.Client(api_key=os.getenv("gemini_api_key"))
         response = client.models.generate_content(
-            model="gemini-2.0-flash", 
+            model="gemini-2.5-flash", 
             contents="write only one quote. Generate a short, impactful one-line quote with a life lesson inspired by the Ramayana and Mahabharata. Keep it clear, simple, and timeless. End with a hyphen followed by the name of the character who said it (e.g., Bhishma, Hanuman, Arjuna, Karna, Draupadi, Rama, Krishna, Sita, etc.). Vary the themes (dharma, truth, courage, devotion, humility, ego, patience)."
         )
         quote = response.text.strip()
@@ -204,3 +206,25 @@ def get_daily_quote():
         print(f"Error generating quote: {e}")
         # Return a fallback quote in case of API failure
         return "True courage is facing danger when you are afraid. - Krishna"
+
+@require_POST
+@login_required
+def share_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if post.user == request.user:
+        return JsonResponse({"error": "You cannot share your own post."}, status=400)
+
+    # Create a new post with the same content and image, but attributed to the sharing user
+    shared_post = Post.objects.create(
+        user=request.user,
+        content=post.content,
+        image=post.image,
+    )
+    return JsonResponse({
+        "success": True,
+        "shared_post_id": shared_post.id,
+        "shared_post_content": shared_post.content,
+        "shared_post_image_url": shared_post.image.url if shared_post.image else None,
+        "shared_post_user": shared_post.user.username,
+        "shared_post_created_at": shared_post.created_at.strftime("%b %d, %Y %H:%M"),
+    })
