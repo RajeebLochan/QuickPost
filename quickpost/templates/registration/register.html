@@ -1,13 +1,271 @@
 {% extends "layout.html" %}
 
-{% block content %}
-<h2 class="center">Register Form</h2>
-<form action="" method="post">
-    {% csrf_token %}
-    <!-- Renders the form fields as <p> elements -->
-    {{form.as_p}}
-    <button type="submit" class="btn btn-primary">Register</button>
-</form>
+{% block title %}Join QuickPost - Create Account{% endblock %}
 
-<p>Already Have an Account? <a href="{% url 'login' %}">Login</a></p>
-{% endblock content %}
+{% block content %}
+<div style="max-width: 400px; margin: 0 auto;">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-icon">
+        <i class="fas fa-user-plus"></i>
+      </div>
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-subtitle">Join QuickPost and start sharing your thoughts</p>
+    </div>
+
+    <form method="post" class="auth-form" novalidate>
+      {% csrf_token %}
+      
+      {% for field in form %}
+        <div class="form-group">
+          <label class="form-label" for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+          
+          {% if field.name == "username" %}
+            <input type="text" 
+                   name="{{ field.name }}" 
+                   id="{{ field.id_for_label }}" 
+                   class="form-input {% if field.errors %}error{% endif %}"
+                   {% if field.value %}value="{{ field.value }}"{% endif %}
+                   {% if field.field.required %}required{% endif %}
+                   placeholder="Choose a username">
+          {% elif field.name == "email" %}
+            <input type="email" 
+                   name="{{ field.name }}" 
+                   id="{{ field.id_for_label }}" 
+                   class="form-input {% if field.errors %}error{% endif %}"
+                   {% if field.value %}value="{{ field.value }}"{% endif %}
+                   {% if field.field.required %}required{% endif %}
+                   placeholder="Enter your email">
+          {% elif field.name == "password1" %}
+            <input type="password" 
+                   name="{{ field.name }}" 
+                   id="{{ field.id_for_label }}" 
+                   class="form-input {% if field.errors %}error{% endif %}"
+                   {% if field.field.required %}required{% endif %}
+                   placeholder="Create a password">
+          {% elif field.name == "password2" %}
+            <input type="password" 
+                   name="{{ field.name }}" 
+                   id="{{ field.id_for_label }}" 
+                   class="form-input {% if field.errors %}error{% endif %}"
+                   {% if field.field.required %}required{% endif %}
+                   placeholder="Confirm your password">
+          {% else %}
+            <input type="text" 
+                   name="{{ field.name }}" 
+                   id="{{ field.id_for_label }}" 
+                   class="form-input {% if field.errors %}error{% endif %}"
+                   {% if field.value %}value="{{ field.value }}"{% endif %}
+                   {% if field.field.required %}required{% endif %}
+                   placeholder="{{ field.label }}">
+          {% endif %}
+          
+          {% if field.help_text %}
+            <div class="form-help">{{ field.help_text }}</div>
+          {% endif %}
+          
+          {% if field.errors %}
+            {% for error in field.errors %}
+              <div class="form-error">{{ error }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <button type="submit" class="btn-primary w-full">
+        <i class="fas fa-user-plus"></i>
+        Create Account
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p class="auth-link-text">
+        Already have an account? 
+        <a href="{% url 'login' %}" class="auth-link">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Auth Page Styles */
+  .auth-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    box-shadow: var(--shadow-lg);
+    margin: var(--space-6) 0;
+  }
+
+  .auth-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+  }
+
+  .auth-icon {
+    width: 4rem;
+    height: 4rem;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-4);
+    color: white;
+    font-size: var(--font-size-xl);
+  }
+
+  .auth-title {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .auth-subtitle {
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+  }
+
+  .auth-form {
+    margin-bottom: var(--space-6);
+  }
+
+  .form-group {
+    margin-bottom: var(--space-5);
+  }
+
+  .form-label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+  }
+
+  .form-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .form-input.error {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  }
+
+  .form-help {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    margin-top: var(--space-1);
+    line-height: 1.4;
+  }
+
+  .form-error {
+    color: var(--error);
+    font-size: var(--font-size-xs);
+    margin-top: var(--space-1);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .form-error::before {
+    content: "⚠";
+    font-size: var(--font-size-sm);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-6);
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    text-decoration: none;
+    font-family: inherit;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .w-full {
+    width: 100%;
+  }
+
+  .auth-footer {
+    text-align: center;
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-color);
+  }
+
+  .auth-link-text {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+  }
+
+  .auth-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .auth-link:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 480px) {
+    .auth-card {
+      padding: var(--space-6);
+      margin: var(--space-4) 0;
+      border-radius: var(--radius-xl);
+    }
+
+    .auth-title {
+      font-size: var(--font-size-2xl);
+    }
+
+    .auth-icon {
+      width: 3rem;
+      height: 3rem;
+      font-size: var(--font-size-lg);
+    }
+  }
+</style>
+{% endblock %}

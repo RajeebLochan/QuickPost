@@ -1,95 +1,557 @@
 {% extends 'layout.html' %}
 {% load static %}
 
-{% block title %}Messages{% endblock %}
+{% block title %}Messages - QuickPost{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 mx-auto">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-comment-dots"></i> Messages
-                    </h5>
-                    <small class="text-muted">{{ conversations|length }} conversation{{ conversations|length|pluralize }}</small>
-                </div>
-
-                <div class="card-body p-0">
-                    {% if conversations %}
-                        <div class="list-group list-group-flush">
-                            {% for conv_data in conversations %}
-                                <a href="{% url 'chat_room' conv_data.conversation.id %}" class="list-group-item list-group-item-action d-flex align-items-center p-3 {% if conv_data.has_unread %}bg-light{% endif %}">
-                                    <div class="flex-shrink-0 me-3">
-                                        {% if conv_data.other_participant.profile.profile_image %}
-                                            <img src="{{ conv_data.other_participant.profile.profile_image.url }}" 
-                                                 alt="{{ conv_data.other_participant.username }}" 
-                                                 class="rounded-circle" 
-                                                 style="width: 50px; height: 50px; object-fit: cover;">
-                                        {% else %}
-                                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" 
-                                                 style="width: 50px; height: 50px;">
-                                                <span class="text-white fw-bold">
-                                                    {{ conv_data.other_participant.username|first|upper }}
-                                                </span>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <h6 class="mb-1 {% if conv_data.has_unread %}fw-bold{% endif %}">
-                                                {{ conv_data.other_participant.get_full_name|default:conv_data.other_participant.username }}
-                                            </h6>
-                                            <small class="text-muted">
-                                                {% if conv_data.last_message %}
-                                                    {{ conv_data.last_message.created_at|timesince }} ago
-                                                {% endif %}
-                                            </small>
-                                        </div>
-                                        
-                                        {% if conv_data.last_message %}
-                                            <p class="mb-1 text-muted {% if conv_data.has_unread %}fw-bold text-dark{% endif %}">
-                                                {% if conv_data.last_message.sender == request.user %}
-                                                    <span class="text-primary">You:</span> 
-                                                {% endif %}
-                                                {{ conv_data.last_message.content|truncatechars:50 }}
-                                            </p>
-                                        {% else %}
-                                            <p class="mb-1 text-muted fst-italic">No messages yet</p>
-                                        {% endif %}
-                                        
-                                        {% if conv_data.has_unread %}
-                                            <span class="badge bg-primary rounded-pill">New</span>
-                                        {% endif %}
-                                    </div>
-                                </a>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-comments text-muted" style="font-size: 3rem;"></i>
-                            <h5 class="mt-3 text-muted">No conversations yet</h5>
-                            <p class="text-muted">Start messaging by visiting someone's profile and clicking "Message"</p>
-                            <a href="{% url 'post_list' %}" class="btn btn-primary">
-                                <i class="fas fa-arrow-left"></i> Back to Posts
-                            </a>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+<div class="messages-container">
+  <div class="messages-header">
+    <div class="header-content">
+      <h1 class="messages-title">
+        <i class="fas fa-inbox"></i>
+        Messages
+      </h1>
+      <div class="header-actions">
+        <button class="action-btn search-btn" onclick="toggleSearch()">
+          <i class="fas fa-search"></i>
+        </button>
+        <button class="action-btn compose-btn" onclick="showCompose()">
+          <i class="fas fa-edit"></i>
+          <span class="btn-text">New Message</span>
+        </button>
+      </div>
     </div>
+    
+    <div class="search-bar" id="search-bar" style="display: none;">
+      <div class="search-input-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search messages..." class="search-input">
+        <button class="search-clear" onclick="toggleSearch()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="messages-content">
+    {% if conversations %}
+      <div class="conversations-list">
+        {% for conv_data in conversations %}
+          <a href="{% url 'chat_room' conv_data.conversation.id %}" class="conversation-item {% if conv_data.has_unread %}unread{% endif %}">
+            <div class="conversation-avatar">
+              {% if conv_data.other_participant.profile.profile_image %}
+                <img src="{{ conv_data.other_participant.profile.profile_image.url }}" alt="{{ conv_data.other_participant.username }}">
+              {% else %}
+                <div class="avatar-placeholder">
+                  <span>{{ conv_data.other_participant.username|first|upper }}</span>
+                </div>
+              {% endif %}
+              <div class="online-indicator"></div>
+            </div>
+            
+            <div class="conversation-content">
+              <div class="conversation-header">
+                <h3 class="conversation-name">
+                  {{ conv_data.other_participant.get_full_name|default:conv_data.other_participant.username }}
+                </h3>
+                <div class="conversation-meta">
+                  {% if conv_data.last_message %}
+                    <span class="conversation-time">
+                      {{ conv_data.last_message.created_at|timesince }} ago
+                    </span>
+                  {% endif %}
+                  {% if conv_data.has_unread %}
+                    <div class="unread-badge">
+                      <span>New</span>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <div class="conversation-preview">
+                {% if conv_data.last_message %}
+                  <div class="message-preview">
+                    {% if conv_data.last_message.sender == request.user %}
+                      <span class="message-sender">You: </span>
+                    {% endif %}
+                    <span class="message-text">{{ conv_data.last_message.content|truncatechars:50 }}</span>
+                  </div>
+                {% else %}
+                  <div class="message-preview empty">
+                    <span class="message-text">No messages yet</span>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="conversation-actions">
+              <button class="action-btn-small" data-conversation-id="{{ conv_data.conversation.id }}" onclick="event.preventDefault(); archiveConversation(this.dataset.conversationId)">
+                <i class="fas fa-archive"></i>
+              </button>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="fas fa-comments"></i>
+        </div>
+        <h3 class="empty-title">No conversations yet</h3>
+        <p class="empty-description">
+          Start messaging by visiting someone's profile and clicking "Message"
+        </p>
+        <div class="empty-actions">
+          <a href="{% url 'post_list' %}" class="btn-primary">
+            <i class="fas fa-users"></i>
+            Discover People
+          </a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
 </div>
 
 <style>
-.list-group-item-action:hover {
-    background-color: #202020 !important; /* Light gray hover */
+.messages-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--bg-card);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-color);
 }
 
-.list-group-item.bg-light {
-    background-color: #000000 !important; /* Gray for unread */
+.messages-header {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--space-6);
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.messages-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.messages-title i {
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.action-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 500;
+}
+
+.action-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.compose-btn {
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+  box-shadow: var(--shadow-glow);
+}
+
+.compose-btn:hover {
+  background: linear-gradient(45deg, var(--secondary), var(--accent));
+  box-shadow: var(--shadow-neon);
+}
+
+.search-bar {
+  margin-top: var(--space-4);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-wrapper i:first-child {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--text-muted);
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-10) var(--space-3) var(--space-10);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--border-accent);
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-glow);
+}
+
+.search-clear {
+  position: absolute;
+  right: var(--space-3);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.search-clear:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.messages-content {
+  min-height: 60vh;
+}
+
+.conversations-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.conversation-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-color);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.conversation-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+}
+
+.conversation-item:hover::before {
+  transform: scaleY(1);
+}
+
+.conversation-item:hover {
+  background: var(--bg-hover);
+  transform: translateX(4px);
+}
+
+.conversation-item.unread {
+  background: rgba(99, 102, 241, 0.05);
+  border-left: 4px solid var(--primary);
+}
+
+.conversation-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.conversation-avatar img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--border-color);
+}
+
+.avatar-placeholder {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: var(--font-size-lg);
+  border: 3px solid var(--border-color);
+}
+
+.online-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--success);
+  border: 2px solid var(--bg-card);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.conversation-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-1);
+}
+
+.conversation-name {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.conversation-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.conversation-time {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.unread-badge {
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  color: white;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  box-shadow: var(--shadow-glow);
+}
+
+.conversation-preview {
+  overflow: hidden;
+}
+
+.message-preview {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+}
+
+.message-preview.empty .message-text {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.message-sender {
+  font-weight: 600;
+  color: var(--primary-light);
+}
+
+.message-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-actions {
+  display: flex;
+  gap: var(--space-2);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.conversation-item:hover .conversation-actions {
+  opacity: 1;
+}
+
+.action-btn-small {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-btn-small:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-accent);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16) var(--space-8);
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: var(--text-muted);
+  margin-bottom: var(--space-6);
+  opacity: 0.7;
+}
+
+.empty-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}
+
+.empty-description {
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  margin-bottom: var(--space-6);
+  max-width: 400px;
+}
+
+.empty-actions {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.btn-primary {
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-6);
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(45deg, var(--secondary), var(--accent));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-neon);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .messages-container {
+    border-radius: 0;
+    margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-4));
+  }
+
+  .messages-header {
+    padding: var(--space-4);
+  }
+
+  .header-actions .btn-text {
+    display: none;
+  }
+
+  .conversation-item {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .conversation-avatar img,
+  .avatar-placeholder {
+    width: 40px;
+    height: 40px;
+  }
+
+  .empty-state {
+    padding: var(--space-12) var(--space-4);
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .messages-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .conversation-name {
+    font-size: var(--font-size-sm);
+  }
+
+  .message-preview {
+    font-size: var(--font-size-xs);
+  }
+}
 </style>
+
+<script>
+function toggleSearch() {
+  const searchBar = document.getElementById('search-bar');
+  const searchInput = document.querySelector('.search-input');
+  
+  if (searchBar.style.display === 'none') {
+    searchBar.style.display = 'block';
+    setTimeout(() => searchInput.focus(), 100);
+  } else {
+    searchBar.style.display = 'none';
+    searchInput.value = '';
+  }
+}
+
+function archiveConversation(conversationId) {
+  // Add archive functionality here
+  console.log('Archiving conversation:', conversationId);
+}
+</script>
 {% endblock %}

@@ -1,17 +1,542 @@
-{% extends "layout.html" %} {% block content %}
+{% extends "layout.html" %}
 
-<h2>{% if form.instance.pk %} Edit Post {% else %} Create Post {% endif %}</h2>
+{% block title %}
+  {% if form.instance.pk %}
+    Edit Post - QuickPost
+  {% else %}
+    Create Post - QuickPost
+  {% endif %}
+{% endblock %}
 
-<form action="" method="post" enctype="multipart/form-data" class="form">
-	{% csrf_token %}
-	{{ form.as_p }}
+{% block content %}
+<div class="post-form-container">
+  <div class="post-form-card">
+    <!-- Header -->
+    <div class="form-header">
+      <div class="header-content">
+        <div class="header-icon">
+          {% if form.instance.pk %}
+            <i class="fas fa-edit"></i>
+          {% else %}
+            <i class="fas fa-plus-circle"></i>
+          {% endif %}
+        </div>
+        <div class="header-text">
+          <h1 class="form-title">
+            {% if form.instance.pk %}
+              Edit Your Post
+            {% else %}
+              Create New Post
+            {% endif %}
+          </h1>
+          <p class="form-subtitle">
+            {% if form.instance.pk %}
+              Make changes to your post
+            {% else %}
+              Share your thoughts with the world
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      
+      {% if form.instance.pk %}
+        <a href="{% url 'post_list' %}" class="back-btn" title="Back to feed">
+          <i class="fas fa-arrow-left"></i>
+        </a>
+      {% endif %}
+    </div>
 
-    
-        <button type="submit" class="btn btn-primary">
-            {% if form.instance.pk %} Update Post {% else %} Create Post {% endif %}
+    <!-- Form -->
+    <form method="post" enctype="multipart/form-data" class="post-form" id="post-form">
+      {% csrf_token %}
+      
+      <!-- Content Field -->
+      <div class="form-group">
+        <label for="{{ form.content.id_for_label }}" class="form-label">
+          <i class="fas fa-pen"></i>
+          What's on your mind?
+        </label>
+        <div class="textarea-wrapper">
+          {{ form.content }}
+          <div class="char-counter">
+            <span id="char-count">{{ form.content.value|length|default:0 }}</span>/240
+          </div>
+        </div>
+        {% if form.content.errors %}
+          <div class="form-errors">
+            {% for error in form.content.errors %}
+              <span class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ error }}
+              </span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Photo Field -->
+      <div class="form-group">
+        <label for="{{ form.photo.id_for_label }}" class="form-label">
+          <i class="fas fa-image"></i>
+          Add Photo (Optional)
+        </label>
+        <div class="file-input-wrapper">
+          {{ form.photo }}
+          <div class="file-input-display" id="file-display">
+            {% if form.instance.pk and form.instance.photo %}
+              <div class="current-image">
+                <img src="{{ form.instance.photo.url }}" alt="Current post image" class="preview-img">
+                <p class="file-info">Current image</p>
+              </div>
+            {% else %}
+              <div class="file-placeholder">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p class="file-text">Click to upload an image or drag and drop</p>
+                <p class="file-hint">PNG, JPG, GIF up to 10MB</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        {% if form.photo.errors %}
+          <div class="form-errors">
+            {% for error in form.photo.errors %}
+              <span class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ error }}
+              </span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <a href="{% url 'post_list' %}" class="btn-secondary">
+          <i class="fas fa-times"></i>
+          <span>Cancel</span>
+        </a>
+        
+        <button type="submit" class="btn-primary" id="submit-btn">
+          {% if form.instance.pk %}
+            <i class="fas fa-save"></i>
+            <span>Update Post</span>
+          {% else %}
+            <i class="fas fa-paper-plane"></i>
+            <span>Create Post</span>
+          {% endif %}
         </button>
-    <a href="{% url 'create_post' %}"></a>
-</form>
+      </div>
+    </form>
+  </div>
+</div>
 
+<style>
+  /* Post Form Container */
+  .post-form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: var(--space-6) 0;
+  }
 
-{% endblock content %}
+  .post-form-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+
+  /* Form Header */
+  .form-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: var(--space-6);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .header-icon {
+    width: 3rem;
+    height: 3rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+  }
+
+  .form-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    margin: 0 0 var(--space-1) 0;
+  }
+
+  .form-subtitle {
+    font-size: var(--font-size-sm);
+    opacity: 0.9;
+    margin: 0;
+  }
+
+  .back-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateX(-2px);
+  }
+
+  /* Form Styles */
+  .post-form {
+    padding: var(--space-6);
+  }
+
+  .form-group {
+    margin-bottom: var(--space-6);
+  }
+
+  .form-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+    font-size: var(--font-size-sm);
+  }
+
+  .form-label i {
+    color: var(--primary);
+    width: 1rem;
+  }
+
+  /* Textarea Wrapper */
+  .textarea-wrapper {
+    position: relative;
+  }
+
+  .textarea-wrapper textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: var(--space-4);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+    resize: vertical;
+    transition: all 0.2s ease;
+  }
+
+  .textarea-wrapper textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .textarea-wrapper textarea::placeholder {
+    color: var(--text-muted);
+  }
+
+  .char-counter {
+    position: absolute;
+    bottom: var(--space-3);
+    right: var(--space-3);
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    background: var(--bg-primary);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+  }
+
+  /* File Input Wrapper */
+  .file-input-wrapper {
+    position: relative;
+  }
+
+  .file-input-wrapper input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .file-input-display {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    text-align: center;
+    background-color: var(--bg-secondary);
+    transition: all 0.2s ease;
+  }
+
+  .file-input-wrapper:hover .file-input-display {
+    border-color: var(--primary);
+    background-color: var(--bg-tertiary);
+  }
+
+  .file-placeholder {
+    color: var(--text-muted);
+  }
+
+  .file-placeholder i {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .file-text {
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+  }
+
+  .file-hint {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+  }
+
+  .current-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .preview-img {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: var(--radius-lg);
+    object-fit: cover;
+    box-shadow: var(--shadow-md);
+  }
+
+  .file-info {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin: 0;
+  }
+
+  /* Form Errors */
+  .form-errors {
+    margin-top: var(--space-2);
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--error);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-1);
+  }
+
+  /* Form Actions */
+  .form-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-color);
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-secondary {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--bg-tertiary);
+    transform: translateY(-1px);
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 768px) {
+    .post-form-container {
+      margin: 0 calc(-1 * var(--space-2));
+      padding: var(--space-4) 0;
+    }
+
+    .post-form-card {
+      border-radius: var(--radius-xl);
+    }
+
+    .form-header {
+      padding: var(--space-4);
+    }
+
+    .header-content {
+      gap: var(--space-3);
+    }
+
+    .header-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 1rem;
+    }
+
+    .form-title {
+      font-size: var(--font-size-xl);
+    }
+
+    .post-form {
+      padding: var(--space-4);
+    }
+
+    .form-actions {
+      flex-direction: column-reverse;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      justify-content: center;
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header-content {
+      flex-direction: column;
+      text-align: center;
+      gap: var(--space-2);
+    }
+
+    .form-header {
+      flex-direction: column;
+    }
+
+    .back-btn {
+      align-self: flex-start;
+      margin-bottom: var(--space-2);
+    }
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.querySelector('textarea[name="content"]');
+    const charCount = document.getElementById('char-count');
+    const submitBtn = document.getElementById('submit-btn');
+    const fileInput = document.querySelector('input[type="file"]');
+    const fileDisplay = document.getElementById('file-display');
+
+    // Character counter functionality
+    if (textarea && charCount) {
+        function updateCharCount() {
+            const count = textarea.value.length;
+            charCount.textContent = count;
+            
+            if (count > 240) {
+                charCount.style.color = 'var(--error)';
+                if (submitBtn) submitBtn.disabled = true;
+            } else {
+                charCount.style.color = 'var(--text-muted)';
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        }
+
+        textarea.addEventListener('input', updateCharCount);
+        updateCharCount(); // Initialize count
+    }
+
+    // File input preview functionality
+    if (fileInput && fileDisplay) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    fileDisplay.innerHTML = `
+                        <div class="current-image">
+                            <img src="${e.target.result}" alt="Preview" class="preview-img">
+                            <p class="file-info">${file.name}</p>
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Drag and drop functionality
+        fileDisplay.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--primary)';
+            this.style.backgroundColor = 'var(--bg-tertiary)';
+        });
+
+        fileDisplay.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--border-color)';
+            this.style.backgroundColor = 'var(--bg-secondary)';
+        });
+
+        fileDisplay.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--border-color)';
+            this.style.backgroundColor = 'var(--bg-secondary)';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}

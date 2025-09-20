@@ -1,15 +1,246 @@
 {% extends "layout.html" %}
 
+{% block title %}Welcome Back - Sign In{% endblock %}
+
 {% block content %}
-<h2 class="center">Login Form</h2>
-<form action="" method="post">
-    {% csrf_token %}
-    {{form.as_p}}
-    <button type="submit" class="btn btn-primary">Login</button>
-</form>
+<div style="max-width: 400px; margin: 0 auto;">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-icon">
+        <i class="fas fa-sign-in-alt"></i>
+      </div>
+      <h1 class="auth-title">Welcome Back</h1>
+      <p class="auth-subtitle">Sign in to your QuickPost account</p>
+    </div>
 
-<p>Don't Have an Account? <a href="{% url 'register' %}">Register</a></p>
+    <form method="post" class="auth-form" novalidate>
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label class="form-label" for="id_username">Username</label>
+        <input type="text" 
+               name="username" 
+               id="id_username" 
+               class="form-input" 
+               required 
+               placeholder="Enter your username"
+               {% if form.username.value %}value="{{ form.username.value }}"{% endif %}>
+        {% if form.username.errors %}
+          {% for error in form.username.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
 
-{% endblock content %}
+      <div class="form-group">
+        <label class="form-label" for="id_password">Password</label>
+        <input type="password" 
+               name="password" 
+               id="id_password" 
+               class="form-input" 
+               required 
+               placeholder="Enter your password">
+        {% if form.password.errors %}
+          {% for error in form.password.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="form-error-general">
+          {% for error in form.non_field_errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <button type="submit" class="btn-primary w-full">
+        <i class="fas fa-sign-in-alt"></i>
+        Sign In
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p class="auth-link-text">
+        Don't have an account? 
+        <a href="{% url 'register' %}" class="auth-link">Create one</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Auth Page Styles */
+  .auth-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    box-shadow: var(--shadow-lg);
+    margin: var(--space-6) 0;
+  }
+
+  .auth-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+  }
+
+  .auth-icon {
+    width: 4rem;
+    height: 4rem;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-4);
+    color: white;
+    font-size: var(--font-size-xl);
+  }
+
+  .auth-title {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .auth-subtitle {
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+  }
+
+  .auth-form {
+    margin-bottom: var(--space-6);
+  }
+
+  .form-group {
+    margin-bottom: var(--space-5);
+  }
+
+  .form-label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+  }
+
+  .form-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .form-error {
+    color: var(--error);
+    font-size: var(--font-size-xs);
+    margin-top: var(--space-1);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .form-error::before {
+    content: "⚠";
+    font-size: var(--font-size-sm);
+  }
+
+  .form-error-general {
+    margin-bottom: var(--space-4);
+    padding: var(--space-3);
+    background-color: rgba(239, 68, 68, 0.1);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--error);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-6);
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    text-decoration: none;
+    font-family: inherit;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+
+  .w-full {
+    width: 100%;
+  }
+
+  .auth-footer {
+    text-align: center;
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-color);
+  }
+
+  .auth-link-text {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+  }
+
+  .auth-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .auth-link:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 480px) {
+    .auth-card {
+      padding: var(--space-6);
+      margin: var(--space-4) 0;
+      border-radius: var(--radius-xl);
+    }
+
+    .auth-title {
+      font-size: var(--font-size-2xl);
+    }
+
+    .auth-icon {
+      width: 3rem;
+      height: 3rem;
+      font-size: var(--font-size-lg);
+    }
+  }
+</style>
+{% endblock %}
 
 

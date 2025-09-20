@@ -81,20 +81,21 @@ def delete_post(request, post_id):
     post = get_object_or_404(Post, id=post_id, user=request.user)
     if request.method == 'POST':
         post.delete()
+        messages.success(request, 'Your post has been deleted successfully!')
         return redirect('post_list')
-    return render(request, 'delete_post.html', {'post': post})
+    return render(request, 'delete_post.html', {'object': post, 'post': post})
 
 
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password1'])
-            user.save()
-            login(request, user)
+            user = form.save()
+            # Create user profile
+            UserProfile.objects.get_or_create(user=user)
+            username = form.cleaned_data.get('username')
+            messages.success(request, f'Account created for {username}! You can now log in.')
             return redirect('login')
-            
     else:
         form = UserRegistrationForm()
     return render(request, 'registration/register.html', {'form': form})

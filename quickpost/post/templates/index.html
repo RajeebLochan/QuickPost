@@ -1,110 +1,626 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quick Post - Connect with the World</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-      <div class="container">
-        <a class="navbar-brand fw-bold" href="#">Quick Post</a>
-        <button
-          class="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navLinks"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navLinks">
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              {% if user.is_authenticated %}
-              <form action="{% url 'logout' %}" method="post" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-link nav-link">Logout</button>
-              </form>
-              {% else %}
-              <li><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-              <li><a class="nav-link" href="{% url 'register' %}">Register</a></li>
-              {% endif %}
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
+{% extends "layout.html" %}
+{% load static %}
 
-    <!-- Hero Section -->
-    <section class="py-5 text-center bg-light">
-      <div class="container">
-        <h1 class="display-4 fw-bold">Connect. Share. Grow.</h1>
-        <p class="lead">
-          Quick Post is the new way to connect with friends, share moments, and
-          discover communities.
-        </p>
-        <a href="{% url 'post_list' %}" class="btn btn-primary btn-lg mt-3"
-          >Visit Now</a
-        >
-      </div>
-    </section>
+{% block title %}QuickPost - Connect. Share. Inspire.{% endblock %}
 
-    <!-- Features Section -->
-    <section id="features" class="py-5">
-      <div class="container">
-        <div class="text-center mb-5">
-          <h2 class="fw-bold">Why Choose Quick Post?</h2>
-          <p class="text-muted">Everything you need to stay connected.</p>
-        </div>
-        <div class="row text-center">
-          <div class="col-md-4">
-            <div class="mb-3">
-              <i class="bi bi-people fs-1 text-primary"></i>
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="hero-background">
+    <div class="floating-particles"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-text">
+      <h1 class="hero-title">
+        Connect. <span class="gradient-text">Share</span>. Inspire.
+      </h1>
+      <p class="hero-subtitle">
+        Experience the future of social networking with QuickPost. 
+        Share your thoughts, connect with friends, and discover amazing communities.
+      </p>
+      <div class="hero-actions">
+        {% if user.is_authenticated %}
+          <a href="{% url 'post_list' %}" class="btn-hero btn-primary">
+            <i class="fas fa-rocket"></i>
+            Enter QuickPost
+          </a>
+          <a href="{% url 'profile' user.username %}" class="btn-hero btn-secondary">
+            <i class="fas fa-user"></i>
+            My Profile
+          </a>
+        {% else %}
+          <a href="{% url 'register' %}" class="btn-hero btn-primary">
+            <i class="fas fa-user-plus"></i>
+            Join QuickPost
+          </a>
+          <a href="{% url 'login' %}" class="btn-hero btn-secondary">
+            <i class="fas fa-sign-in-alt"></i>
+            Login
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="mockup-container">
+        <div class="mockup-phone">
+          <div class="mockup-screen">
+            <div class="mockup-post">
+              <div class="mockup-avatar"></div>
+              <div class="mockup-content">
+                <div class="mockup-text-line"></div>
+                <div class="mockup-text-line short"></div>
+              </div>
             </div>
-            <h5>Build Communities</h5>
-            <p>Create groups, events, and forums around your interests.</p>
-          </div>
-          <div class="col-md-4">
-            <div class="mb-3">
-              <i class="bi bi-camera fs-1 text-primary"></i>
+            <div class="mockup-post">
+              <div class="mockup-avatar"></div>
+              <div class="mockup-content">
+                <div class="mockup-image"></div>
+              </div>
             </div>
-            <h5>Share Your Moments</h5>
-            <p>Post photos, thoughts, and stories easily and securely.</p>
-          </div>
-          <div class="col-md-4">
-            <div class="mb-3">
-              <i class="bi bi-lock fs-1 text-primary"></i>
-            </div>
-            <h5>Privacy First</h5>
-            <p>Your data is protected. You control who sees your content.</p>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-4">
-      <div class="container">
-        <p class="mb-0">&copy; 2025 Quick Post. All rights reserved.</p>
-        <p class="small mt-1">
-          <a href="/about/" class="text-decoration-none text-light">About</a> ·
-          <a href="/contact/" class="text-decoration-none text-light"
-            >Contact</a
-          >
+<!-- Features Section -->
+<section class="features-section">
+  <div class="features-container">
+    <div class="section-header">
+      <h2 class="section-title">Why Choose QuickPost?</h2>
+      <p class="section-subtitle">Discover the features that make us unique</p>
+    </div>
+    
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <h3 class="feature-title">Build Communities</h3>
+        <p class="feature-description">
+          Connect with like-minded people, create groups, and build lasting relationships
         </p>
       </div>
-    </footer>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-camera"></i>
+        </div>
+        <h3 class="feature-title">Share Your Story</h3>
+        <p class="feature-description">
+          Share photos, thoughts, and moments with beautiful, intuitive posting tools
+        </p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-comments"></i>
+        </div>
+        <h3 class="feature-title">Real-time Chat</h3>
+        <p class="feature-description">
+          Stay connected with instant messaging and real-time notifications
+        </p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-shield-alt"></i>
+        </div>
+        <h3 class="feature-title">Privacy First</h3>
+        <p class="feature-description">
+          Your data is protected with enterprise-grade security and privacy controls
+        </p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-mobile-alt"></i>
+        </div>
+        <h3 class="feature-title">Mobile Ready</h3>
+        <p class="feature-description">
+          Seamless experience across all devices with responsive design
+        </p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-heart"></i>
+        </div>
+        <h3 class="feature-title">Engage & Inspire</h3>
+        <p class="feature-description">
+          Like, comment, and share content that matters to you and your community
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Optionally add Bootstrap Icons -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
-      rel="stylesheet"
-    />
-  </body>
-</html>
+<!-- Stats Section -->
+<section class="stats-section">
+  <div class="stats-container">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-number">10K+</div>
+        <div class="stat-label">Active Users</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">50K+</div>
+        <div class="stat-label">Posts Shared</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">100K+</div>
+        <div class="stat-label">Connections Made</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">99.9%</div>
+        <div class="stat-label">Uptime</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <div class="cta-container">
+    <div class="cta-content">
+      <h2 class="cta-title">Ready to Get Started?</h2>
+      <p class="cta-subtitle">
+        Join thousands of users who are already sharing their stories on QuickPost
+      </p>
+      {% if not user.is_authenticated %}
+        <a href="{% url 'register' %}" class="btn-hero btn-primary large">
+          <i class="fas fa-rocket"></i>
+          Start Your Journey
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<style>
+/* Hero Section */
+.hero-section {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--bg-gradient-dark);
+}
+
+.hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+  opacity: 0.9;
+}
+
+.floating-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(6, 182, 212, 0.2) 0%, transparent 50%);
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+.hero-content {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-16);
+  align-items: center;
+  z-index: 2;
+}
+
+.hero-text {
+  max-width: 600px;
+}
+
+.hero-title {
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: var(--space-6);
+  color: var(--text-primary);
+}
+
+.gradient-text {
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: var(--font-size-xl);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-8);
+  line-height: 1.6;
+}
+
+.hero-actions {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.btn-hero {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-2xl);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: var(--font-size-lg);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-hero:hover::before {
+  left: 100%;
+}
+
+.btn-primary {
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-neon);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 2px solid var(--border-accent);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+.large {
+  padding: var(--space-5) var(--space-8);
+  font-size: var(--font-size-xl);
+}
+
+/* Hero Visual */
+.hero-visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mockup-container {
+  position: relative;
+  transform: perspective(1000px) rotateY(-15deg);
+  animation: float 6s ease-in-out infinite;
+}
+
+.mockup-phone {
+  width: 300px;
+  height: 600px;
+  background: var(--bg-card);
+  border-radius: 40px;
+  padding: 20px;
+  box-shadow: var(--shadow-xl);
+  border: 2px solid var(--border-accent);
+}
+
+.mockup-screen {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-secondary);
+  border-radius: 30px;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.mockup-post {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  display: flex;
+  gap: var(--space-3);
+  animation: fadeInUp 2s ease-out infinite alternate;
+}
+
+.mockup-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mockup-content {
+  flex: 1;
+}
+
+.mockup-text-line {
+  height: 12px;
+  background: var(--text-muted);
+  border-radius: 6px;
+  margin-bottom: var(--space-2);
+  opacity: 0.6;
+}
+
+.mockup-text-line.short {
+  width: 60%;
+}
+
+.mockup-image {
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(45deg, var(--accent), var(--primary));
+  border-radius: var(--radius-md);
+  margin-top: var(--space-2);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0.5; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Features Section */
+.features-section {
+  padding: var(--space-16) 0;
+  background: var(--bg-secondary);
+}
+
+.features-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: var(--space-12);
+}
+
+.section-title {
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.section-subtitle {
+  font-size: var(--font-size-xl);
+  color: var(--text-secondary);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--space-8);
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  text-align: center;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover::before {
+  transform: scaleX(1);
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-glow);
+  border-color: var(--border-accent);
+}
+
+.feature-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-6);
+  font-size: var(--font-size-2xl);
+  color: white;
+}
+
+.feature-title {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.feature-description {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Stats Section */
+.stats-section {
+  padding: var(--space-16) 0;
+  background: var(--bg-primary);
+  position: relative;
+}
+
+.stats-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 0%, rgba(99, 102, 241, 0.1) 50%, transparent 100%);
+}
+
+.stats-container {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+  z-index: 2;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-8);
+  text-align: center;
+}
+
+.stat-item {
+  padding: var(--space-6);
+}
+
+.stat-number {
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--space-2);
+}
+
+.stat-label {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* CTA Section */
+.cta-section {
+  padding: var(--space-16) 0;
+  background: var(--bg-gradient);
+  text-align: center;
+}
+
+.cta-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.cta-title {
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
+  color: white;
+  margin-bottom: var(--space-4);
+}
+
+.cta-subtitle {
+  font-size: var(--font-size-xl);
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: var(--space-8);
+  line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero-content {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+    text-align: center;
+  }
+  
+  .hero-title {
+    font-size: 3rem;
+  }
+  
+  .hero-actions {
+    justify-content: center;
+  }
+  
+  .mockup-phone {
+    width: 250px;
+    height: 500px;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-6);
+  }
+  
+  .section-title {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .cta-title {
+    font-size: var(--font-size-3xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .btn-hero {
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--font-size-base);
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}

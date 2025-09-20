@@ -1,17 +1,391 @@
 {% extends "layout.html" %}
 
-{% block title %} Delete Post {% endblock %}
+{% block title %}Delete Post - QuickPost{% endblock %}
 
 {% block content %}
-<h1 class="text-center mt-4">Are You Sure that, You want to delete the post?</h1>
-
-<form action="" method="post">
-    {% csrf_token %}
-    <div class="text-center mt-4">
-        <button type="submit" class="btn btn-danger">Delete</button>
-        <a href="{% url 'post_list' %}" class="btn btn-secondary">Cancel</a>
+<div class="delete-post-container">
+  <div class="delete-post-card">
+    <!-- Warning Header -->
+    <div class="warning-header">
+      <div class="warning-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div class="warning-content">
+        <h1 class="warning-title">Delete Post</h1>
+        <p class="warning-subtitle">This action cannot be undone</p>
+      </div>
     </div>
-</form>
+
+    <!-- Post Preview (if available) -->
+    {% if object %}
+    <div class="post-preview">
+      <div class="preview-header">
+        <h3 class="preview-title">You're about to delete this post:</h3>
+      </div>
+      <div class="preview-content">
+        {% if object.photo %}
+          <div class="preview-image">
+            <img src="{{ object.photo.url }}" alt="Post image">
+          </div>
+        {% endif %}
+        <div class="preview-text">
+          <p>{{ object.content|truncatewords:30 }}</p>
+        </div>
+        <div class="preview-meta">
+          <span class="preview-date">
+            <i class="fas fa-clock"></i>
+            Posted {{ object.created_at|timesince }} ago
+          </span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Confirmation Message -->
+    <div class="confirmation-message">
+      <div class="message-icon">
+        <i class="fas fa-trash-alt"></i>
+      </div>
+      <div class="message-content">
+        <h2 class="message-title">Are you sure you want to delete this post?</h2>
+        <p class="message-text">
+          Once deleted, this post and all its comments will be permanently removed. 
+          This action cannot be undone.
+        </p>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <form method="post" class="delete-form">
+      {% csrf_token %}
+      <div class="form-actions">
+        <a href="{% url 'post_list' %}" class="btn-secondary">
+          <i class="fas fa-arrow-left"></i>
+          <span>Keep Post</span>
+        </a>
+        
+        <button type="submit" class="btn-danger" id="delete-btn">
+          <i class="fas fa-trash"></i>
+          <span>Delete Forever</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  /* Delete Post Container */
+  .delete-post-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: var(--space-6) 0;
+  }
+
+  .delete-post-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+
+  /* Warning Header */
+  .warning-header {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .warning-icon {
+    width: 3rem;
+    height: 3rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .warning-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    margin: 0 0 var(--space-1) 0;
+  }
+
+  .warning-subtitle {
+    font-size: var(--font-size-sm);
+    opacity: 0.9;
+    margin: 0;
+  }
+
+  /* Post Preview */
+  .post-preview {
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+  }
+
+  .preview-header {
+    margin-bottom: var(--space-4);
+  }
+
+  .preview-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .preview-content {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--space-4);
+  }
+
+  .preview-image {
+    margin-bottom: var(--space-3);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .preview-image img {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: cover;
+  }
+
+  .preview-text {
+    margin-bottom: var(--space-3);
+  }
+
+  .preview-text p {
+    color: var(--text-primary);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .preview-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .preview-date {
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  /* Confirmation Message */
+  .confirmation-message {
+    padding: var(--space-6);
+    text-align: center;
+  }
+
+  .message-icon {
+    width: 4rem;
+    height: 4rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto var(--space-4);
+  }
+
+  .message-title {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-3) 0;
+  }
+
+  .message-text {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Form Actions */
+  .delete-form {
+    padding: var(--space-6);
+    border-top: 1px solid var(--border-color);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: center;
+  }
+
+  .btn-secondary,
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    min-width: 140px;
+    justify-content: center;
+  }
+
+  .btn-secondary {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--bg-tertiary);
+    transform: translateY(-1px);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  }
+
+  .btn-danger:active {
+    transform: translateY(0);
+  }
+
+  /* Loading State */
+  #delete-btn.loading {
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  #delete-btn.loading::after {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: var(--space-2);
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 768px) {
+    .delete-post-container {
+      margin: 0 calc(-1 * var(--space-2));
+      padding: var(--space-4) 0;
+    }
+
+    .delete-post-card {
+      border-radius: var(--radius-xl);
+    }
+
+    .warning-header {
+      padding: var(--space-4);
+      flex-direction: column;
+      text-align: center;
+      gap: var(--space-3);
+    }
+
+    .warning-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 1rem;
+    }
+
+    .warning-title {
+      font-size: var(--font-size-xl);
+    }
+
+    .post-preview,
+    .confirmation-message,
+    .delete-form {
+      padding: var(--space-4);
+    }
+
+    .form-actions {
+      flex-direction: column-reverse;
+    }
+
+    .btn-secondary,
+    .btn-danger {
+      width: 100%;
+    }
+
+    .message-title {
+      font-size: var(--font-size-lg);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .message-icon {
+      width: 3rem;
+      height: 3rem;
+      font-size: 1.25rem;
+    }
+
+    .preview-image img {
+      max-height: 150px;
+    }
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteBtn = document.getElementById('delete-btn');
+    const deleteForm = document.querySelector('.delete-form');
+
+    if (deleteForm && deleteBtn) {
+        deleteForm.addEventListener('submit', function(e) {
+            // Add loading state
+            deleteBtn.classList.add('loading');
+            deleteBtn.disabled = true;
+            
+            // Optional: Add a slight delay to show the loading state
+            // In a real scenario, this would be handled by the form submission
+        });
+    }
+    
+    // Add keyboard shortcut for ESC to cancel
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            window.location.href = "{% url 'post_list' %}";
+        }
+    });
+});
+</script>
 
 {% endblock %}
 
