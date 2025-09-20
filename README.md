@@ -2,7 +2,6 @@
 
 <div align="center">
 
-![QuickPost Banner](https://via.placeholder.com/800x200/0f0f23/6366f1?text=QuickPost+%7C+Modern+Social+Media+Platform)
 
 [![Django](https://img.shields.io/badge/Django-5.2.4-092E20?style=for-the-badge&logo=django&logoColor=white)](https://djangoproject.com/)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org/)
