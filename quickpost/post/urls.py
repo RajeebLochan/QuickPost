@@ -17,4 +17,11 @@ urlpatterns = [
     path('profile/<str:username>/followers/', views.followers_list, name='followers_list'),
     path('profile/<str:username>/following/', views.following_list, name='following_list'),
     path('profile/<str:username>/', views.profile, name='profile'),
+    
+    # Chat URLs
+    path('conversations/', views.conversations_list, name='conversations_list'),
+    path('chat/<int:conversation_id>/', views.chat_room, name='chat_room'),
+    path('start-conversation/<int:user_id>/', views.start_conversation, name='start_conversation'),
+    path('ajax/send-message/', views.send_message_ajax, name='send_message_ajax'),
+    path('ajax/messages/<int:conversation_id>/', views.get_messages_ajax, name='get_messages_ajax'),
 ]

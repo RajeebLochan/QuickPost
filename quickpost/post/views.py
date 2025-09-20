@@ -1,5 +1,5 @@
 from django.shortcuts import redirect, render
-from .models import Post , Comment, UserProfile
+from .models import Post , Comment, UserProfile, Conversation, Message
 from .forms import PostForm, UserRegistrationForm, UserUpdateForm, ProfileUpdateForm
 from django.contrib.auth.decorators import login_required 
 from django.contrib.auth import login, authenticate
@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.cache import cache
+from django.db.models import Max
 from google import genai
 import os
 from dotenv import load_dotenv
@@ -376,3 +377,166 @@ def following_list(request, username):
         'is_following_page': True,
     }
     return render(request, 'followers_following.html', context)
+
+
+# Chat Views
+@login_required
+def conversations_list(request):
+    """Display list of conversations for the current user"""
+    conversations = Conversation.objects.filter(
+        participants=request.user
+    ).annotate(
+        latest_message_time=Max('messages__created_at')
+    ).order_by('-latest_message_time')
+    
+    # Add conversation details
+    conversation_data = []
+    for conversation in conversations:
+        other_participant = conversation.get_other_participant(request.user)
+        last_message = conversation.last_message
+        has_unread = conversation.has_unread_messages(request.user)
+        
+        conversation_data.append({
+            'conversation': conversation,
+            'other_participant': other_participant,
+            'last_message': last_message,
+            'has_unread': has_unread
+        })
+    
+    context = {
+        'conversations': conversation_data,
+    }
+    return render(request, 'conversations_list.html', context)
+
+
+@login_required
+def chat_room(request, conversation_id):
+    """Display chat room for a specific conversation"""
+    conversation = get_object_or_404(Conversation, id=conversation_id)
+    
+    # Check if user is participant
+    if not conversation.participants.filter(id=request.user.id).exists():
+        messages.error(request, "You don't have access to this conversation.")
+        return redirect('conversations_list')
+    
+    # Get other participant
+    other_participant = conversation.get_other_participant(request.user)
+    
+    # Get messages (latest 50)
+    chat_messages = conversation.messages.select_related('sender').order_by('-created_at')[:50]
+    chat_messages = list(reversed(chat_messages))
+    
+    # Mark messages as read
+    conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+    
+    context = {
+        'conversation': conversation,
+        'other_participant': other_participant,
+        'messages': chat_messages,
+        'conversation_id': conversation_id,
+    }
+    return render(request, 'chat_room.html', context)
+
+
+@login_required
+def start_conversation(request, user_id):
+    """Start a new conversation with a user"""
+    other_user = get_object_or_404(User, id=user_id)
+    
+    # Check if user is trying to message themselves
+    if other_user == request.user:
+        messages.error(request, "You cannot message yourself.")
+        return redirect('profile', username=other_user.username)
+    
+    # Check if conversation already exists
+    existing_conversation = Conversation.objects.filter(
+        participants=request.user
+    ).filter(
+        participants=other_user
+    ).first()
+    
+    if existing_conversation:
+        return redirect('chat_room', conversation_id=existing_conversation.id)
+    
+    # Create new conversation
+    conversation = Conversation.objects.create()
+    conversation.participants.add(request.user, other_user)
+    
+    messages.success(request, f"Started conversation with {other_user.username}")
+    return redirect('chat_room', conversation_id=conversation.id)
+
+
+@login_required
+@require_POST
+def send_message_ajax(request):
+    """Send a message via AJAX (alternative to WebSocket)"""
+    try:
+        conversation_id = request.POST.get('conversation_id')
+        message_content = request.POST.get('message', '').strip()
+        
+        if not conversation_id or not message_content:
+            return JsonResponse({'success': False, 'error': 'Missing data'})
+        
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+        
+        # Check if user is participant
+        if not conversation.participants.filter(id=request.user.id).exists():
+            return JsonResponse({'success': False, 'error': 'Access denied'})
+        
+        # Validate message length
+        if len(message_content) > 1000:
+            return JsonResponse({'success': False, 'error': 'Message too long'})
+        
+        # Create message
+        message = Message.objects.create(
+            conversation=conversation,
+            sender=request.user,
+            content=message_content
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': {
+                'id': message.id,
+                'content': message.content,
+                'sender': message.sender.username,
+                'sender_id': message.sender.id,
+                'timestamp': message.created_at.isoformat(),
+            }
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': 'Failed to send message'})
+
+
+@login_required
+def get_messages_ajax(request, conversation_id):
+    """Get messages for a conversation via AJAX"""
+    try:
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+        
+        # Check if user is participant
+        if not conversation.participants.filter(id=request.user.id).exists():
+            return JsonResponse({'success': False, 'error': 'Access denied'})
+        
+        # Get messages (latest 50)
+        messages_qs = conversation.messages.select_related('sender').order_by('-created_at')[:50]
+        
+        messages_data = []
+        for message in reversed(messages_qs):
+            messages_data.append({
+                'id': message.id,
+                'content': message.content,
+                'sender': message.sender.username,
+                'sender_id': message.sender.id,
+                'timestamp': message.created_at.isoformat(),
+                'is_read': message.is_read
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'messages': messages_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': 'Failed to load messages'})

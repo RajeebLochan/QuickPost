@@ -214,3 +214,64 @@ def save_user_profile(sender, instance, **kwargs):
         instance.profile.save()
     else:
         UserProfile.objects.create(user=instance)
+
+
+class Conversation(models.Model):
+    """Model to represent a conversation between two users"""
+    participants = models.ManyToManyField(User, related_name='conversations')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-updated_at']
+    
+    def __str__(self):
+        participants_list = list(self.participants.all())
+        if len(participants_list) >= 2:
+            return f"Conversation between {participants_list[0].username} and {participants_list[1].username}"
+        return f"Conversation {self.id}"
+    
+    @property
+    def last_message(self):
+        """Get the last message in this conversation"""
+        return self.messages.order_by('-created_at').first()
+    
+    def get_other_participant(self, user):
+        """Get the other participant in a two-person conversation"""
+        return self.participants.exclude(id=user.id).first()
+    
+    def has_unread_messages(self, user):
+        """Check if the conversation has unread messages for the user"""
+        return self.messages.filter(is_read=False).exclude(sender=user).exists()
+
+
+class Message(models.Model):
+    """Model to represent individual messages in conversations"""
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    content = models.TextField(max_length=1000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"Message from {self.sender.username}: {self.content[:30]}"
+    
+    def clean(self):
+        """Validate message data"""
+        if not self.content.strip():
+            raise ValidationError('Message content cannot be empty.')
+        if len(self.content) > 1000:
+            raise ValidationError('Message content cannot exceed 1000 characters.')
+    
+    @property
+    def time_since_created(self):
+        """Get time elapsed since message creation"""
+        return timezone.now() - self.created_at
+    
+    def mark_as_read(self):
+        """Mark this message as read"""
+        self.is_read = True
+        self.save()

@@ -85,10 +85,10 @@
                                 {% if is_following %}Unfollow{% else %}Follow{% endif %}
                             </span>
                         </button>
-                        <button class="btn btn-outline message-btn">
-                            <i class="fas fa-message"></i>
+                        <a href="{% url 'start_conversation' profile_user.id %}" class="btn btn-outline message-btn">
+                            <i class="fas fa-envelope"></i>
                             Message
-                        </button>
+                        </a>
                     </div>
                 {% endif %}
             </div>
