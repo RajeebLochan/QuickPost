@@ -10,7 +10,7 @@
 
 **A modern, feature-rich social media platform built with Django, featuring real-time messaging, dark theme UI, and comprehensive social features.**
 
-[🎯 Demo](#demo) • [✨ Features](#features) • [🚀 Quick Start](#quick-start) • [📖 Documentation](#documentation) • [🤝 Contributing](#contributing)
+
 
 </div>
 
