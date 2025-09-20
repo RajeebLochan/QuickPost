@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render
-from .models import Post , Comment
-from .forms import PostForm, UserRegistrationForm
+from .models import Post , Comment, UserProfile
+from .forms import PostForm, UserRegistrationForm, UserUpdateForm, ProfileUpdateForm
 from django.contrib.auth.decorators import login_required 
 from django.contrib.auth import login, authenticate
 from django.shortcuts import get_object_or_404
@@ -8,6 +8,7 @@ from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
+from django.contrib import messages
 from django.core.cache import cache
 from google import genai
 import os
@@ -114,11 +115,48 @@ def profile(request, username):
     user = get_object_or_404(User, username=username)
     posts = Post.objects.filter(user=user).order_by('-created_at')
     
+    # Get or create profile
+    profile, created = UserProfile.objects.get_or_create(user=user)
+    
+    # Check follow status if user is authenticated and not viewing own profile
+    is_following = False
+    if request.user.is_authenticated and request.user != user:
+        current_profile, created = UserProfile.objects.get_or_create(user=request.user)
+        is_following = current_profile.is_following(profile)
+    
     context = {
         'profile_user': user,
+        'profile': profile,
         'posts': posts,
+        'is_own_profile': request.user == user,
+        'is_following': is_following,
     }
     return render(request, 'profile.html', context)
+
+@login_required
+def edit_profile(request):
+    if request.method == 'POST':
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+        profile_form = ProfileUpdateForm(
+            request.POST, 
+            request.FILES, 
+            instance=request.user.profile
+        )
+        
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, 'Your profile has been updated successfully!')
+            return redirect('profile', username=request.user.username)
+    else:
+        user_form = UserUpdateForm(instance=request.user)
+        profile_form = ProfileUpdateForm(instance=request.user.profile)
+    
+    context = {
+        'user_form': user_form,
+        'profile_form': profile_form,
+    }
+    return render(request, 'edit_profile.html', context)
 
 @login_required
 def like_post(request, post_id):
@@ -228,3 +266,113 @@ def share_post(request, post_id):
         "shared_post_user": shared_post.user.username,
         "shared_post_created_at": shared_post.created_at.strftime("%b %d, %Y %H:%M"),
     })
+
+@login_required
+@require_POST
+def toggle_follow(request, username):
+    """Toggle follow/unfollow for a user"""
+    try:
+        target_user = get_object_or_404(User, username=username)
+        
+        # Can't follow yourself
+        if target_user == request.user:
+            return JsonResponse({'error': 'Cannot follow yourself'}, status=400)
+        
+        # Get or create profiles with error handling
+        try:
+            current_profile, created = UserProfile.objects.get_or_create(user=request.user)
+            if created:
+                print(f"Created new profile for {request.user.username}")
+        except Exception as e:
+            print(f"Error creating current user profile: {e}")
+            return JsonResponse({'error': 'Error accessing your profile'}, status=500)
+            
+        try:
+            target_profile, created = UserProfile.objects.get_or_create(user=target_user)
+            if created:
+                print(f"Created new profile for {target_user.username}")
+        except Exception as e:
+            print(f"Error creating target user profile: {e}")
+            return JsonResponse({'error': 'Error accessing target profile'}, status=500)
+        
+        # Toggle follow status
+        try:
+            is_following = current_profile.toggle_follow(target_profile)
+            print(f"Toggle follow result: {is_following}")
+        except Exception as e:
+            print(f"Error in toggle_follow: {e}")
+            return JsonResponse({'error': 'Error updating follow status'}, status=500)
+        
+        return JsonResponse({
+            'success': True,
+            'is_following': is_following,
+            'followers_count': target_profile.followers.count(),
+            'following_count': current_profile.following.count(),
+            'message': f'You are now {"following" if is_following else "not following"} {target_user.username}'
+        })
+        
+    except Exception as e:
+        print(f"Unexpected error in toggle_follow: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def followers_list(request, username):
+    """Display list of followers for a user"""
+    user = get_object_or_404(User, username=username)
+    profile, created = UserProfile.objects.get_or_create(user=user)
+    
+    followers = profile.followers.all().select_related('user')
+    
+    # Add follow status for current user
+    current_user_profile = None
+    if request.user.is_authenticated:
+        current_user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    # Create a list with follow status
+    followers_with_status = []
+    for follower in followers:
+        is_following = False
+        if current_user_profile and current_user_profile != follower:
+            is_following = current_user_profile.is_following(follower)
+        followers_with_status.append({
+            'profile': follower,
+            'is_following': is_following
+        })
+    
+    context = {
+        'profile_user': user,
+        'followers': followers_with_status,
+        'is_followers_page': True,
+    }
+    return render(request, 'followers_following.html', context)
+
+@login_required
+def following_list(request, username):
+    """Display list of users that this user is following"""
+    user = get_object_or_404(User, username=username)
+    profile, created = UserProfile.objects.get_or_create(user=user)
+    
+    following = profile.following.all().select_related('user')
+    
+    # Add follow status for current user (all following users should show "Unfollow")
+    current_user_profile = None
+    if request.user.is_authenticated:
+        current_user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    # Create a list with follow status
+    following_with_status = []
+    for following_profile in following:
+        is_following = False
+        if current_user_profile and current_user_profile != following_profile:
+            is_following = current_user_profile.is_following(following_profile)
+        following_with_status.append({
+            'profile': following_profile,
+            'is_following': is_following
+        })
+    
+    context = {
+        'profile_user': user,
+        'following': following_with_status,
+        'is_following_page': True,
+    }
+    return render(request, 'followers_following.html', context)

@@ -1,0 +1,524 @@
+{% extends "layout.html" %}
+{% load static %}
+
+{% block title %}
+    {% if is_followers_page %}
+        {{ profile_user.username }}'s Followers
+    {% else %}
+        {{ profile_user.username }}'s Following
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<form style="display: none;">
+    {% csrf_token %}
+</form>
+<div class="followers-container">
+    <div class="header-section">
+        <div class="back-navigation">
+            <a href="{% url 'profile' profile_user.username %}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                Back to Profile
+            </a>
+        </div>
+        
+        <div class="page-header">
+            <div class="profile-info-mini">
+                {% if profile_user.profile.profile_image %}
+                    <img src="{{ profile_user.profile.profile_image.url }}" alt="{{ profile_user.username }}" class="mini-avatar">
+                {% else %}
+                    <img src="{% static 'images/default-avatar.png' %}" alt="{{ profile_user.username }}" class="mini-avatar">
+                {% endif %}
+                <div class="profile-details-mini">
+                    <h1>{{ profile_user.get_full_name|default:profile_user.username }}</h1>
+                    <p>@{{ profile_user.username }}</p>
+                </div>
+            </div>
+            
+            <div class="tabs-header">
+                <a href="{% url 'followers_list' profile_user.username %}" 
+                   class="tab-link {% if is_followers_page %}active{% endif %}">
+                    <span class="tab-number">{{ profile_user.profile.get_followers_count }}</span>
+                    <span class="tab-label">Followers</span>
+                </a>
+                <a href="{% url 'following_list' profile_user.username %}" 
+                   class="tab-link {% if is_following_page %}active{% endif %}">
+                    <span class="tab-number">{{ profile_user.profile.get_following_count }}</span>
+                    <span class="tab-label">Following</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="users-list">
+        {% if is_followers_page and followers %}
+            {% for follower_data in followers %}
+                {% with follower_profile=follower_data.profile %}
+                <div class="user-card">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            {% if follower_profile.profile_image %}
+                                <img src="{{ follower_profile.profile_image.url }}" alt="{{ follower_profile.user.username }}">
+                            {% else %}
+                                <img src="{% static 'images/default-avatar.png' %}" alt="{{ follower_profile.user.username }}">
+                            {% endif %}
+                        </div>
+                        <div class="user-details">
+                            <h3 class="user-name">
+                                <a href="{% url 'profile' follower_profile.user.username %}">
+                                    {{ follower_profile.user.get_full_name|default:follower_profile.user.username }}
+                                </a>
+                            </h3>
+                            <p class="username">@{{ follower_profile.user.username }}</p>
+                            {% if follower_profile.bio %}
+                                <p class="user-bio">{{ follower_profile.bio|truncatewords:15 }}</p>
+                            {% endif %}
+                            <div class="user-stats">
+                                <span>{{ follower_profile.get_posts_count }} posts</span>
+                                <span>{{ follower_profile.get_followers_count }} followers</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if user.is_authenticated and follower_profile.user != user %}
+                        <div class="user-actions">
+                            {% if follower_data.is_following %}
+                                <button class="btn btn-outline follow-btn" 
+                                        data-username="{{ follower_profile.user.username }}" 
+                                        data-following="true">
+                                    <i class="fas fa-user-minus"></i>
+                                    Unfollow
+                                </button>
+                            {% else %}
+                                <button class="btn btn-primary follow-btn" 
+                                        data-username="{{ follower_profile.user.username }}" 
+                                        data-following="false">
+                                    <i class="fas fa-user-plus"></i>
+                                    Follow
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endwith %}
+            {% endfor %}
+        {% elif is_following_page and following %}
+            {% for following_data in following %}
+                {% with following_profile=following_data.profile %}
+                <div class="user-card">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            {% if following_profile.profile_image %}
+                                <img src="{{ following_profile.profile_image.url }}" alt="{{ following_profile.user.username }}">
+                            {% else %}
+                                <img src="{% static 'images/default-avatar.png' %}" alt="{{ following_profile.user.username }}">
+                            {% endif %}
+                        </div>
+                        <div class="user-details">
+                            <h3 class="user-name">
+                                <a href="{% url 'profile' following_profile.user.username %}">
+                                    {{ following_profile.user.get_full_name|default:following_profile.user.username }}
+                                </a>
+                            </h3>
+                            <p class="username">@{{ following_profile.user.username }}</p>
+                            {% if following_profile.bio %}
+                                <p class="user-bio">{{ following_profile.bio|truncatewords:15 }}</p>
+                            {% endif %}
+                            <div class="user-stats">
+                                <span>{{ following_profile.get_posts_count }} posts</span>
+                                <span>{{ following_profile.get_followers_count }} followers</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if user.is_authenticated and following_profile.user != user %}
+                        <div class="user-actions">
+                            {% if following_data.is_following %}
+                                <button class="btn btn-outline follow-btn" 
+                                        data-username="{{ following_profile.user.username }}" 
+                                        data-following="true">
+                                    <i class="fas fa-user-minus"></i>
+                                    Unfollow
+                                </button>
+                            {% else %}
+                                <button class="btn btn-primary follow-btn" 
+                                        data-username="{{ following_profile.user.username }}" 
+                                        data-following="false">
+                                    <i class="fas fa-user-plus"></i>
+                                    Follow
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endwith %}
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>
+                    {% if is_followers_page %}
+                        No followers yet
+                    {% else %}
+                        Not following anyone yet
+                    {% endif %}
+                </h3>
+                <p>
+                    {% if is_followers_page %}
+                        {{ profile_user.username }} doesn't have any followers yet.
+                    {% else %}
+                        {{ profile_user.username }} isn't following anyone yet.
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.followers-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header-section {
+    margin-bottom: 2rem;
+}
+
+.back-navigation {
+    margin-bottom: 1rem;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    color: #4f46e5;
+    transform: translateX(-5px);
+}
+
+.page-header {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.profile-info-mini {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.mini-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #667eea;
+}
+
+.profile-details-mini h1 {
+    color: #fff;
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.profile-details-mini p {
+    color: #b0b0b0;
+    margin: 0.25rem 0 0 0;
+}
+
+.tabs-header {
+    display: flex;
+    gap: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 0.5rem;
+}
+
+.tab-link {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    text-decoration: none;
+    color: #b0b0b0;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.tab-link.active {
+    background: #667eea;
+    color: white;
+}
+
+.tab-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.tab-label {
+    font-size: 0.9rem;
+}
+
+.users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.user-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.user-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.user-avatar {
+    flex-shrink: 0;
+}
+
+.user-avatar img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #667eea;
+}
+
+.user-details {
+    flex: 1;
+}
+
+.user-name a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.user-name a:hover {
+    color: #667eea;
+}
+
+.username {
+    color: #b0b0b0;
+    margin: 0.25rem 0 0.5rem 0;
+    font-size: 0.9rem;
+}
+
+.user-bio {
+    color: #e0e0e0;
+    margin: 0.5rem 0;
+    line-height: 1.4;
+}
+
+.user-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #b0b0b0;
+}
+
+.user-actions {
+    flex-shrink: 0;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: none;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid #6c757d;
+    color: #6c757d;
+}
+
+.btn-outline:hover {
+    background: #6c757d;
+    color: white;
+}
+
+.btn.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.btn.loading::after {
+    content: '';
+    width: 14px;
+    height: 14px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 0.5rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #b0b0b0;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: #667eea;
+}
+
+.empty-state h3 {
+    margin-bottom: 0.5rem;
+    color: #e0e0e0;
+    font-size: 1.5rem;
+}
+
+.empty-state p {
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .followers-container {
+        padding: 10px;
+    }
+    
+    .user-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .user-actions {
+        align-self: stretch;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .tabs-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .tab-link {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Follow/Unfollow functionality for user cards
+    const followBtns = document.querySelectorAll('.follow-btn');
+    
+    followBtns.forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const username = this.dataset.username;
+            const isFollowing = this.dataset.following === 'true';
+            
+            // Add loading state
+            this.classList.add('loading');
+            
+            try {
+                const response = await fetch(`/post/follow/${username}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const icon = this.querySelector('i');
+                    const text = this.querySelector('i').nextSibling;
+                    
+                    if (data.is_following) {
+                        icon.className = 'fas fa-user-minus';
+                        this.innerHTML = '<i class="fas fa-user-minus"></i> Unfollow';
+                        this.classList.remove('btn-primary');
+                        this.classList.add('btn-outline');
+                        this.dataset.following = 'true';
+                    } else {
+                        icon.className = 'fas fa-user-plus';
+                        this.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
+                        this.classList.remove('btn-outline');
+                        this.classList.add('btn-primary');
+                        this.dataset.following = 'false';
+                    }
+                } else {
+                    console.error('Error:', data.error);
+                    alert('An error occurred. Please try again.');
+                }
+                
+            } catch (error) {
+                console.error('Network error:', error);
+                alert('Network error. Please check your connection.');
+            } finally {
+                // Remove loading state
+                this.classList.remove('loading');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
