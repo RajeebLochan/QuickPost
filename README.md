@@ -1316,8 +1316,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### 📧 Contact
 - **Developer**: [@RajeebLochan](https://github.com/RajeebLochan)
-- **Email**: rajeeb@example.com
-- **LinkedIn**: [Rajeeb Lochan](https://linkedin.com/in/rajeeblochan)
+- **LinkedIn**: [Rajeeb Lochan](https://linkedin.com/in/rajeeb-lochan)
 
 ---
 
