@@ -1,0 +1,34 @@
+{% load quickpost %}
+<dialog class="modal" id="report-dialog" aria-labelledby="report-title">
+  <form method="post" action="{% url 'report' %}" data-report-form>
+    {% csrf_token %}
+    <div class="modal-head"><h2 class="section-title" id="report-title">Report</h2><button class="icon-btn" type="button" data-close aria-label="Close">{% icon "x" %}</button></div>
+    <div class="modal-body">
+      <input type="hidden" name="target_type"><input type="hidden" name="target_id">
+      <fieldset class="radio-list" style="border:0;margin:0;padding:0">
+        <legend class="label" style="margin-bottom:8px">What's wrong?</legend>
+        <label><input type="radio" name="reason" value="spam" required>Spam</label>
+        <label><input type="radio" name="reason" value="harassment">Harassment or bullying</label>
+        <label><input type="radio" name="reason" value="hate">Hate speech</label>
+        <label><input type="radio" name="reason" value="violence">Violence or threats</label>
+        <label><input type="radio" name="reason" value="nudity">Nudity or sexual content</label>
+        <label><input type="radio" name="reason" value="impersonation">Impersonation</label>
+        <label><input type="radio" name="reason" value="other">Something else</label>
+      </fieldset>
+      <div class="field" style="margin-top:16px"><label class="label" for="report-details">Details (optional)</label><textarea id="report-details" name="details" rows="3" maxlength="1000"></textarea></div>
+      <div class="form-actions"><button class="btn btn-ghost" type="button" data-close>Cancel</button><button class="btn btn-dark" type="submit">Send report</button></div>
+    </div>
+  </form>
+</dialog>
+<dialog class="modal" id="confirm-dialog" aria-labelledby="confirm-title">
+  <div class="modal-head"><h2 class="section-title" id="confirm-title">Are you sure?</h2><button class="icon-btn" type="button" data-close aria-label="Close">{% icon "x" %}</button></div>
+  <div class="modal-body">
+    <p class="secondary" data-confirm-text></p>
+    <div class="form-actions"><button class="btn btn-ghost" type="button" data-close>Cancel</button><button class="btn btn-danger" type="button" data-confirm-ok>Confirm</button></div>
+  </div>
+</dialog>
+<dialog class="lightbox" id="lightbox" aria-label="Image">
+  <button class="icon-btn" type="button" data-close aria-label="Close">{% icon "x" %}</button>
+  <img alt="">
+</dialog>
+{% csrf_token %}

@@ -1,0 +1,10 @@
+{% load quickpost %}
+{% for r in requests %}
+<div class="user-row" data-request="{{ r.pk }}">
+  <a href="{% url 'profile' r.from_user.username %}" tabindex="-1" aria-hidden="true">{% avatar r.from_user %}</a>
+  <div class="who"><a class="name" href="{% url 'profile' r.from_user.username %}">{{ r.from_user.profile.name }}</a><span class="handle">@{{ r.from_user.username }} · {{ r.created_at|ago }}</span></div>
+  <form method="post" action="{% url 'respond_follow_request' r.pk 'decline' %}" data-request-form>{% csrf_token %}<button class="btn btn-sm btn-ghost" type="submit">Decline</button></form>
+  <form method="post" action="{% url 'respond_follow_request' r.pk 'accept' %}" data-request-form>{% csrf_token %}<button class="btn btn-sm btn-dark" type="submit">Accept</button></form>
+</div>
+{% endfor %}
+{% include "partials/load_more.html" %}

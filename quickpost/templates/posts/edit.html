@@ -1,0 +1,23 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}Edit post · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head"><a class="icon-btn" href="{{ post.get_absolute_url }}" aria-label="Back">{% icon "arrow-left" %}</a><h1 class="page-title">Edit post</h1></header>
+<form class="composer" method="post" data-composer>
+  {% csrf_token %}
+  {% avatar user %}
+  <div class="composer-body">
+    <label class="visually-hidden" for="edit-text">Post text</label>
+    <textarea id="edit-text" name="content" rows="5" maxlength="{{ POST_MAX_LENGTH }}" data-count-to="edit-counter" data-autogrow autofocus>{{ form.content.value|default:"" }}</textarea>
+    {% for e in form.content.errors %}<p class="error-text">{{ e }}</p>{% endfor %}
+    {% include "partials/post_media.html" with images=post.images.all %}
+    <div class="composer-tools">
+      <span class="meta">Photos can't be changed after posting</span><span class="spacer"></span>
+      <span class="counter" id="edit-counter" data-max="{{ POST_MAX_LENGTH }}"></span>
+      <a class="btn btn-ghost" href="{{ post.get_absolute_url }}">Cancel</a>
+      <button class="btn btn-primary" type="submit" data-submit>Save</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block aside %}{% endblock %}

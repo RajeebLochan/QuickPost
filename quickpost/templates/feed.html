@@ -1,0 +1,21 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}Home · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head"><h1 class="page-title">Home</h1></header>
+{% if not user.profile.email_verified %}
+<div class="banner">{% icon "mail" %}<span>Confirm your email to start posting. We sent a link to {{ user.email }}.</span>
+  <form method="post" action="{% url 'resend_verification' %}">{% csrf_token %}<button class="btn btn-sm btn-outline" type="submit">Resend</button></form></div>
+{% endif %}
+{% include "partials/composer.html" %}
+<div class="feed-quote" style="padding-top:16px">{% include "partials/quote_card.html" %}</div>
+<div data-list>
+  {% include "partials/post_items.html" %}
+</div>
+{% if not posts and page.number == 1 %}
+  {% url 'explore' as explore_url %}
+  {% include "partials/empty.html" with icon_name="house" title="Your feed is quiet" body="Follow a few people and their posts will show up here. Explore shows what's popular right now." action_url=explore_url action_label="Explore posts" %}
+  {% if suggestions %}<section class="panel" style="margin-top:8px"><div class="panel-head"><h2 class="section-title">People to follow</h2></div><div class="panel-body">{% for u in suggestions %}{% include "partials/user_row.html" %}{% endfor %}</div></section>{% endif %}
+{% endif %}
+{% endblock %}
+{% block aside %}{% include "partials/aside.html" %}{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load quickpost %}
+{% block body %}
+<a class="skip-link btn btn-dark" href="#main">Skip to content</a>
+<div class="shell{% if not user.is_authenticated %} is-guest{% endif %}">
+  {% if user.is_authenticated %}
+  <aside class="sidebar" aria-label="Primary">
+    <a class="brand" href="{% url 'feed' %}" aria-label="QuickPost home"><span class="stamp-mark" aria-hidden="true">Q</span><span>QuickPost</span></a>
+    <nav class="nav" aria-label="Main">
+      <a class="nav-link {% active 'feed' %}" href="{% url 'feed' %}"{% if nav == 'feed' %} aria-current="page"{% endif %}>{% icon "house" %}<span class="nav-text">Home</span></a>
+      <a class="nav-link {% active 'explore' %}" href="{% url 'explore' %}"{% if nav == 'explore' %} aria-current="page"{% endif %}>{% icon "compass" %}<span class="nav-text">Explore</span></a>
+      <a class="nav-link {% active 'search' %}" href="{% url 'search' %}"{% if nav == 'search' %} aria-current="page"{% endif %}>{% icon "search" %}<span class="nav-text">Search</span></a>
+      <div class="menu-wrap">
+        <a class="nav-link {% active 'notifications' %}" href="{% url 'notifications' %}" data-notif-toggle aria-haspopup="true" aria-expanded="false"{% if nav == 'notifications' %} aria-current="page"{% endif %}>{% icon "bell" %}<span class="nav-text">Notifications</span><span class="badge" data-badge="notifications"{% if not unread_notifications %} hidden{% endif %}>{{ unread_notifications|default:0 }}</span></a>
+        <div class="menu notif-pop" id="notif-pop" role="dialog" aria-label="Notifications"></div>
+      </div>
+      <a class="nav-link {% active 'messages' %}" href="{% url 'inbox' %}"{% if nav == 'messages' %} aria-current="page"{% endif %}>{% icon "message-circle" %}<span class="nav-text">Messages</span><span class="badge" data-badge="messages"{% if not unread_messages %} hidden{% endif %}>{{ unread_messages|default:0 }}</span></a>
+      <a class="nav-link {% active 'saved' %}" href="{% url 'saved' %}"{% if nav == 'saved' %} aria-current="page"{% endif %}>{% icon "bookmark" %}<span class="nav-text">Saved</span></a>
+      <a class="nav-link {% active 'profile' %}" href="{% url 'profile' user.username %}"{% if nav == 'profile' %} aria-current="page"{% endif %}>{% icon "user" %}<span class="nav-text">Profile</span></a>
+      <a class="nav-link {% active 'settings' %}" href="{% url 'settings_profile' %}"{% if nav == 'settings' %} aria-current="page"{% endif %}>{% icon "settings" %}<span class="nav-text">Settings</span></a>
+    </nav>
+    <a class="btn btn-primary btn-lg sidebar-compose" href="{% url 'compose' %}" aria-label="New post">{% icon "square-pen" %}<span class="nav-text">Post</span></a>
+    <div class="sidebar-footer menu-wrap">
+      <button class="account-chip" type="button" data-menu="account-menu" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+        {% avatar user "sm" %}
+        <span class="who"><span>{{ user.profile.name }}</span><span class="meta">@{{ user.username }}</span></span>
+      </button>
+      <div class="menu menu-up" id="account-menu" role="menu">
+        <a class="menu-item" role="menuitem" href="{% url 'profile' user.username %}">{% icon "user" %}Your profile</a>
+        <a class="menu-item" role="menuitem" href="{% url 'settings_account' %}">{% icon "settings" %}Account settings</a>
+        <div class="menu-sep"></div>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="menu-item" role="menuitem" type="submit">{% icon "log-out" %}Log out</button></form>
+      </div>
+    </div>
+  </aside>
+  <header class="topbar">
+    <a class="brand" href="{% url 'feed' %}" aria-label="QuickPost home"><span class="stamp-mark" aria-hidden="true">Q</span><span>QuickPost</span></a>
+    <span class="spacer"></span>
+    <a class="icon-btn" href="{% url 'search' %}" aria-label="Search">{% icon "search" %}</a>
+    <a class="icon-btn" href="{% url 'inbox' %}" aria-label="Messages">{% icon "message-circle" %}<span class="badge" data-badge="messages"{% if not unread_messages %} hidden{% endif %}>{{ unread_messages|default:0 }}</span></a>
+  </header>
+  {% else %}
+  <header class="landing-nav">
+    <a class="brand" href="{% url 'home' %}"><span class="stamp-mark" aria-hidden="true">Q</span><span>QuickPost</span></a>
+    <span class="spacer"></span>
+    <a class="text-link" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in</a>
+    <a class="btn btn-dark" href="{% url 'register' %}">Create account</a>
+  </header>
+  {% endif %}
+  <div class="main">
+    <main class="column" id="main" tabindex="-1">
+      {% block content %}{% endblock %}
+    </main>
+    {% block aside_wrap %}{% if user.is_authenticated %}<aside class="aside" aria-label="Context">{% block aside %}{% endblock %}</aside>{% endif %}{% endblock %}
+  </div>
+  {% if user.is_authenticated %}
+  <nav class="tabbar" aria-label="Main">
+    <a class="{% active 'feed' %}" href="{% url 'feed' %}" aria-label="Home">{% icon "house" %}</a>
+    <a class="{% active 'explore' %}" href="{% url 'explore' %}" aria-label="Explore">{% icon "compass" %}</a>
+    <a class="{% active 'compose' %}" href="{% url 'compose' %}" aria-label="New post">{% icon "square-pen" %}</a>
+    <a class="{% active 'notifications' %}" href="{% url 'notifications' %}" aria-label="Notifications">{% icon "bell" %}<span class="badge" data-badge="notifications"{% if not unread_notifications %} hidden{% endif %}>{{ unread_notifications|default:0 }}</span></a>
+    <a class="{% active 'profile' %}" href="{% url 'profile' user.username %}" aria-label="Profile">{% icon "user" %}</a>
+  </nav>
+  {% endif %}
+</div>
+{% include "partials/dialogs.html" %}
+{% endblock %}

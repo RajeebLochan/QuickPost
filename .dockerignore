@@ -1,0 +1,9 @@
+.git
+.env
+**/__pycache__
+**/*.pyc
+quickpost/db.sqlite3
+quickpost/media
+quickpost/staticfiles
+venv
+.venv

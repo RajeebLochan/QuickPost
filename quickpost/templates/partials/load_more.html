@@ -1,0 +1,7 @@
+{% if page.has_next %}
+<div class="load-more" data-load-more-wrap>
+  <a class="btn btn-outline" href="?{% querystring page=page.next_number partial=None %}" data-load-more>Load more</a>
+</div>
+{% elif page.number > 1 %}
+<p class="end-note">You've reached the end</p>
+{% endif %}

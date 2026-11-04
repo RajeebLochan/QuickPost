@@ -1,2 +1,25 @@
-/venv
+# Secrets and local configuration
 .env
+.env.*
+!.env.example
+
+# Local data: never commit databases or user uploads
+*.sqlite3
+*.sqlite3-journal
+quickpost/media/
+quickpost/staticfiles/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+/venv
+.coverage
+htmlcov/
+.ruff_cache/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/

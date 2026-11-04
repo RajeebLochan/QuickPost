@@ -1,0 +1,15 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}Notifications · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head">
+  <h1 class="page-title">Notifications</h1>
+  <form method="post" action="{% url 'notifications_read_all' %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" type="submit">Mark all as read</button></form>
+</header>
+{% if pending_requests %}
+<a class="banner" href="{% url 'follow_requests' %}">{% icon "user-plus" %}<span>{{ pending_requests }} follow request{{ pending_requests|pluralize }} waiting</span></a>
+{% endif %}
+<div data-list style="padding-left:14px">{% include "partials/notification_items.html" %}</div>
+{% if not notifications and page.number == 1 %}{% include "partials/empty.html" with icon_name="bell" title="No notifications yet" body="Likes, comments, mentions, new followers and messages show up here." %}{% endif %}
+{% endblock %}
+{% block aside %}{% endblock %}

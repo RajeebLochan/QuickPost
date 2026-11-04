@@ -1,0 +1,29 @@
+{% load quickpost %}{% with p=post.display %}
+<article class="post" id="post-{{ p.pk }}" data-post="{{ p.pk }}">
+  {% if post.is_plain_repost %}
+  <div class="post-context">{% icon "repeat-2" %}<span>{% if post.user_id == user.pk %}You reposted{% else %}<a href="{% url 'profile' post.user.username %}">{{ post.user.profile.name }}</a> reposted{% endif %}</span></div>
+  {% endif %}
+  <a href="{% url 'profile' p.user.username %}" tabindex="-1" aria-hidden="true">{% avatar p.user %}</a>
+  <div class="post-main">
+    <div class="post-top">
+      <div class="post-head">
+        <a class="name" href="{% url 'profile' p.user.username %}">{{ p.user.profile.name }}</a>
+        <span class="handle">@{{ p.user.username }}</span>
+        <span class="dot" aria-hidden="true">·</span>
+        <a class="time" href="{{ p.get_absolute_url }}"><time datetime="{{ p.created_at|date:'c' }}" title="{{ p.created_at|date:'j M Y, H:i' }}">{{ p.created_at|ago }}</time></a>
+        {% if p.edited_at %}<span class="edited">· edited</span>{% endif %}
+      </div>
+      {% include "partials/post_menu.html" %}
+    </div>
+    {% if p.content %}<div class="post-text">{{ p.content|rich_text }}</div>{% endif %}
+    {% include "partials/post_media.html" with images=p.images.all %}
+    {% if post.embedded %}{% with q=post.embedded %}
+    <a class="embed" href="{{ q.get_absolute_url }}">
+      <div class="post-head"><span class="name">{{ q.user.profile.name }}</span><span class="handle">@{{ q.user.username }}</span><span class="dot" aria-hidden="true">·</span><span class="time">{{ q.created_at|ago }}</span></div>
+      {% if q.content %}<div class="post-text">{{ q.content|truncatechars:200 }}</div>{% endif %}
+    </a>
+    {% endwith %}{% endif %}
+    {% include "partials/post_actions.html" %}
+  </div>
+</article>
+{% endwith %}

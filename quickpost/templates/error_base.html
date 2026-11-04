@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block body %}
+<header class="landing-nav"><a class="brand" href="/"><span class="stamp-mark" aria-hidden="true">Q</span><span>QuickPost</span></a></header>
+<main class="error-page" id="main"><div>
+  <p class="code">{% block code %}{% endblock %}</p>
+  <h1>{% block heading %}{% endblock %}</h1>
+  <p>{% block text %}{% endblock %}</p>
+  <div class="row"><a class="btn btn-dark" href="/">Go to QuickPost</a><button class="btn btn-ghost" type="button" onclick="history.back()">Go back</button></div>
+</div></main>
+{% endblock %}

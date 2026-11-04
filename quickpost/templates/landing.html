@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load quickpost %}
+{% block title %}QuickPost: short posts and conversations with people you follow{% endblock %}
+{% block body %}
+<header class="landing-nav">
+  <a class="brand" href="{% url 'home' %}"><span class="stamp-mark" aria-hidden="true">Q</span><span>QuickPost</span></a>
+  <span class="spacer"></span>
+  <a class="text-link" href="{% url 'login' %}">Log in</a>
+  <a class="btn btn-dark" href="{% url 'register' %}">Create account</a>
+</header>
+<main id="main">
+  <section class="hero">
+    <div class="enter">
+      <h1>Say it in 240 characters. Keep talking in messages.</h1>
+      <p class="sub">QuickPost is a small social network for short posts and photos from people you choose to follow, with private conversations alongside.</p>
+      <div class="cta"><a class="btn btn-primary btn-lg" href="{% url 'register' %}">Create an account</a><a class="btn btn-outline btn-lg" href="{% url 'login' %}">Log in</a></div>
+    </div>
+    <div class="hero-visual enter" style="animation-delay:60ms">
+      {% include "partials/quote_card.html" with large=True %}
+      {% if preview_posts %}
+      <div class="panel" aria-label="Recent public posts">
+        {% for post in preview_posts %}{% include "partials/post_card.html" %}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  <section class="facts-row" aria-label="What you can do">
+    <div><h3>{% icon "square-pen" %}Short posts and photos</h3><p>Write up to 240 characters, add up to four photos, tag topics with #hashtags and mention people with @.</p></div>
+    <div><h3>{% icon "message-circle" %}Messages that arrive live</h3><p>One-to-one conversations with typing indicators and read receipts, no refresh needed.</p></div>
+    <div><h3>{% icon "lock" %}You decide who sees you</h3><p>Make your account private, approve followers, and block or report anyone who crosses a line.</p></div>
+  </section>
+</main>
+{% endblock %}

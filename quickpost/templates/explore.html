@@ -1,0 +1,15 @@
+{% extends "app.html" %}
+{% block title %}Explore · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head"><h1 class="page-title">Explore<span class="sub">Most liked, commented and reposted in the last two weeks</span></h1></header>
+{% if trending and page.number == 1 %}
+<div class="tabs" aria-label="Trending hashtags" style="border:0;padding:12px 0 4px">
+  {% for tag in trending %}<a class="btn btn-sm btn-outline" style="margin-right:4px" href="{{ tag.get_absolute_url }}">#{{ tag.name }}</a>{% endfor %}
+</div>
+{% endif %}
+<div data-list>{% include "partials/post_items.html" %}</div>
+{% if not posts and page.number == 1 %}
+  {% include "partials/empty.html" with icon_name="compass" title="Nothing trending yet" body="Posts from public accounts in the last two weeks appear here, ranked by likes, comments and reposts." %}
+{% endif %}
+{% endblock %}
+{% block aside %}{% include "partials/aside.html" with trending=None %}{% endblock %}

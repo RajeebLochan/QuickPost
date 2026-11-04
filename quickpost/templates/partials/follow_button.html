@@ -1,0 +1,6 @@
+{% if u.pk != user.pk and user.is_authenticated %}
+<button class="btn btn-sm btn-dark follow-btn" type="button" data-action="follow" data-url="{% url 'toggle_follow' u.username %}"
+  data-state="{% if u.viewer_follows %}following{% elif u.viewer_requested %}requested{% else %}none{% endif %}">
+  {% if u.viewer_follows %}Following{% elif u.viewer_requested %}Requested{% else %}Follow{% endif %}
+</button>
+{% endif %}

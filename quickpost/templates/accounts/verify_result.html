@@ -1,0 +1,13 @@
+{% extends "accounts/auth.html" %}
+{% block title %}Email confirmation · QuickPost{% endblock %}
+{% block auth %}
+{% if ok %}
+<h1>Email confirmed</h1>
+<p class="lead">You can post, comment and send messages now.</p>
+<a class="btn btn-primary btn-lg" style="margin-top:24px" href="{% url 'feed' %}">Go to your feed</a>
+{% else %}
+<h1>{% if expired %}This link has expired{% else %}This link doesn't work{% endif %}</h1>
+<p class="lead">Confirmation links expire after three days, and only the newest link for an address works. Log in and send a new one from Settings.</p>
+<a class="btn btn-dark btn-lg" style="margin-top:24px" href="{% url 'settings_account' %}">Open account settings</a>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block content %}
+<header class="page-head"><h1 class="page-title">Settings</h1></header>
+<nav class="tabs" aria-label="Settings sections">
+  <a class="tab{% if section == 'profile' %} is-active{% endif %}" href="{% url 'settings_profile' %}">Profile</a>
+  <a class="tab{% if section == 'account' %} is-active{% endif %}" href="{% url 'settings_account' %}">Account</a>
+  <a class="tab{% if section == 'privacy' %} is-active{% endif %}" href="{% url 'settings_privacy' %}">Privacy</a>
+</nav>
+{% block settings %}{% endblock %}
+{% endblock %}
+{% block aside %}{% endblock %}

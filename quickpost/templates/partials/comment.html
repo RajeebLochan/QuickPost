@@ -1,0 +1,26 @@
+{% load quickpost %}
+<div class="comment" id="comment-{{ comment.pk }}" data-comment="{{ comment.pk }}">
+  <a href="{% url 'profile' comment.user.username %}" tabindex="-1" aria-hidden="true">{% if comment.parent_id %}{% avatar comment.user "xs" %}{% else %}{% avatar comment.user "sm" %}{% endif %}</a>
+  <div class="comment-body">
+    <div class="comment-head">
+      <a class="name" href="{% url 'profile' comment.user.username %}">{{ comment.user.profile.name }}</a>
+      <span class="meta">@{{ comment.user.username }} · <time datetime="{{ comment.created_at|date:'c' }}" title="{{ comment.created_at|date:'j M Y, H:i' }}">{{ comment.created_at|ago }}</time></span>
+    </div>
+    <div class="comment-text">{{ comment.content|rich_text }}</div>
+    {% if user.is_authenticated %}
+    <div class="comment-actions">
+      <button class="action" type="button" data-action="reply" data-parent="{{ comment.parent_id|default:comment.pk }}" data-username="{{ comment.user.username }}">{% icon "reply" %}Reply</button>
+      {% if comment.user_id == user.pk or post.user_id == user.pk or user.is_staff %}
+      <button class="action" type="button" data-action="delete-comment" data-url="{% url 'comment_delete' comment.pk %}">{% icon "trash-2" %}Delete</button>
+      {% elif comment.user_id != user.pk %}
+      <button class="action" type="button" data-action="report" data-target-type="comment" data-target-id="{{ comment.pk }}">{% icon "flag" %}Report</button>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if not comment.parent_id %}
+    <div class="replies" data-replies="{{ comment.pk }}"{% if not comment.visible_replies %} hidden{% endif %}>
+      {% for reply in comment.visible_replies %}{% include "partials/comment.html" with comment=reply %}{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>

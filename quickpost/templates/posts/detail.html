@@ -1,0 +1,53 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}{{ post.user.profile.name }}: "{{ post.content|truncatechars:60 }}" · QuickPost{% endblock %}
+{% block description %}{{ post.content|truncatechars:150 }}{% endblock %}
+{% block content %}
+<header class="page-head"><a class="icon-btn" href="{% url 'feed' %}" data-back aria-label="Back">{% icon "arrow-left" %}</a><h1 class="page-title">Post</h1></header>
+{% with p=post %}
+<article class="post-detail" data-post="{{ p.pk }}">
+  <div class="post-top">
+    <a href="{% url 'profile' p.user.username %}" tabindex="-1" aria-hidden="true">{% avatar p.user %}</a>
+    <div style="min-width:0;flex:1">
+      <a class="name" style="font-weight:500" href="{% url 'profile' p.user.username %}">{{ p.user.profile.name }}</a>
+      <div class="meta">@{{ p.user.username }}</div>
+    </div>
+    {% include "partials/post_menu.html" %}
+  </div>
+  {% if p.content %}<div class="post-text" style="margin-top:12px">{{ p.content|rich_text }}</div>{% endif %}
+  {% include "partials/post_media.html" with images=p.images.all %}
+  {% if post.embedded %}{% with q=post.embedded %}
+  <a class="embed" href="{{ q.get_absolute_url }}"><div class="post-head"><span class="name">{{ q.user.profile.name }}</span><span class="handle">@{{ q.user.username }}</span></div>{% if q.content %}<div class="post-text">{{ q.content|truncatechars:200 }}</div>{% endif %}{% include "partials/post_media.html" with images=q.images.all %}</a>
+  {% endwith %}{% endif %}
+  <p class="meta" style="margin-top:12px"><time datetime="{{ p.created_at|date:'c' }}">{{ p.created_at|date:"H:i · j M Y" }}</time>{% if p.edited_at %} · edited {{ p.edited_at|ago }} ago{% endif %}</p>
+  <div class="stats">
+    <span><strong data-count="likes_count">{{ p.likes_total }}</strong> like{{ p.likes_total|pluralize }}</span>
+    <span><strong data-count="comments_count">{{ p.comments_total }}</strong> comment{{ p.comments_total|pluralize }}</span>
+    <span><strong data-count="reposts_count">{{ p.reposts_total }}</strong> repost{{ p.reposts_total|pluralize }}</span>
+  </div>
+  {% include "partials/post_actions.html" %}
+</article>
+
+<section id="comments" aria-label="Comments">
+  {% if user.is_authenticated %}
+  <form class="comment-form" method="post" action="{% url 'comment_create' p.pk %}" data-comment-form>
+    {% csrf_token %}
+    {% avatar user "sm" %}
+    <div class="grow">
+      <input type="hidden" name="parent" value="">
+      <div class="reply-target" data-reply-target hidden></div>
+      <label class="visually-hidden" for="comment-text">Comment</label>
+      <textarea class="textarea" id="comment-text" name="content" rows="1" maxlength="500" placeholder="Add a comment" required data-count-to="comment-counter" data-autogrow></textarea>
+      <div class="row"><span class="counter" id="comment-counter" data-max="500"></span><button class="btn btn-ghost btn-sm" type="button" data-cancel-reply hidden>Cancel reply</button><button class="btn btn-dark btn-sm" type="submit" data-submit disabled>Comment</button></div>
+    </div>
+  </form>
+  {% else %}
+  <p class="banner"><span><a href="{% url 'login' %}?next={{ request.path|urlencode }}" style="text-decoration:underline">Log in</a> to comment</span></p>
+  {% endif %}
+  <div data-list data-comment-list>
+    {% include "partials/comment_items.html" with page=comments_page %}
+  </div>
+  {% if not comments %}<p class="end-note" data-no-comments>No comments yet</p>{% endif %}
+</section>
+{% endwith %}
+{% endblock %}

@@ -1,0 +1,7 @@
+<div class="head"><span class="section-title">Notifications</span>{% if notifications %}<form method="post" action="{% url 'notifications_read_all' %}" data-mark-all>{% csrf_token %}<button class="btn btn-ghost btn-sm" type="submit">Mark all as read</button></form>{% endif %}</div>
+<div class="body">
+  {% for n in notifications %}{% include "partials/notification_item.html" %}{% empty %}
+  <div class="empty" style="padding:32px 8px"><p>No notifications yet</p></div>
+  {% endfor %}
+</div>
+<a class="foot" href="{% url 'notifications' %}">See all</a>

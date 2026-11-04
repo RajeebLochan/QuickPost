@@ -1,0 +1,59 @@
+# Local stack: Daphne + PostgreSQL + Redis, plus a job that refreshes the daily quote.
+# Usage: cp .env.example .env  (set DJANGO_SECRET_KEY), then `docker compose up --build`.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: quickpost
+      POSTGRES_USER: quickpost
+      POSTGRES_PASSWORD: quickpost
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quickpost"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  web:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://quickpost:quickpost@db:5432/quickpost
+      REDIS_URL: redis://redis:6379/0
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      # Compose serves plain HTTP on localhost; behind real TLS remove these three.
+      SECURE_SSL_REDIRECT: "False"
+      SESSION_COOKIE_SECURE: "False"
+      CSRF_COOKIE_SECURE: "False"
+      SERVE_MEDIA: "True"
+      MEDIA_ROOT: /app/media
+    command: sh -c "python manage.py migrate --noinput && daphne -b 0.0.0.0 -p 8000 quickpost.asgi:application"
+    ports:
+      - "8000:8000"
+    volumes:
+      - media:/app/media
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  quote:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://quickpost:quickpost@db:5432/quickpost
+      REDIS_URL: redis://redis:6379/0
+    # Refreshes at most every 12 hours; failures are logged and the site keeps its current quote.
+    command: sh -c "while true; do python manage.py refresh_quote --if-older-than 12 || true; sleep 3600; done"
+    depends_on:
+      web: { condition: service_started }
+
+volumes:
+  pgdata:
+  media:

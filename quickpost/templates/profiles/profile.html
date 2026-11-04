@@ -1,0 +1,62 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}{{ profile.name }} (@{{ profile_user.username }}) · QuickPost{% endblock %}
+{% block description %}{{ profile.bio|default:"On QuickPost"|truncatechars:150 }}{% endblock %}
+{% block content %}
+<div class="cover">{% if profile.cover_image %}<img src="{{ profile.cover_image.url }}" alt="" decoding="async">{% endif %}</div>
+<section class="profile-head">
+  <div class="top">
+    {% avatar profile_user "xl" %}
+    <div class="controls">
+      {% if is_own %}
+        <a class="btn btn-outline" href="{% url 'settings_profile' %}">Edit profile</a>
+      {% elif user.is_authenticated %}
+        <form method="post" action="{% url 'message_user' profile_user.username %}">{% csrf_token %}<button class="icon-btn" type="submit" aria-label="Message @{{ profile_user.username }}" data-tip="Message" style="border:1px solid var(--hairline-strong)">{% icon "mail" %}</button></form>
+        <button class="btn btn-dark follow-btn" type="button" data-action="follow" data-url="{% url 'toggle_follow' profile_user.username %}" data-state="{{ follow_state }}" data-private="{{ profile.is_private|yesno:'true,false' }}">{% if follow_state == "following" %}Following{% elif follow_state == "requested" %}Requested{% elif follows_you %}Follow back{% else %}Follow{% endif %}</button>
+        <div class="menu-wrap">
+          <button class="icon-btn" type="button" data-menu="profile-menu" aria-haspopup="true" aria-expanded="false" aria-label="More" style="border:1px solid var(--hairline-strong)">{% icon "ellipsis" %}</button>
+          <div class="menu menu-right" id="profile-menu" role="menu">
+            <button class="menu-item" type="button" role="menuitem" data-action="copy-link" data-share-url="{{ request.scheme }}://{{ request.get_host }}{{ profile.get_absolute_url }}">{% icon "link" %}Copy profile link</button>
+            <button class="menu-item" type="button" role="menuitem" data-action="report" data-target-type="user" data-target-id="{{ profile_user.pk }}">{% icon "flag" %}Report @{{ profile_user.username }}</button>
+            <button class="menu-item danger" type="button" role="menuitem" data-action="block" data-url="{% url 'toggle_block' profile_user.username %}" data-username="{{ profile_user.username }}">{% icon "ban" %}Block</button>
+          </div>
+        </div>
+      {% else %}
+        <a class="btn btn-dark" href="{% url 'login' %}?next={{ request.path|urlencode }}">Follow</a>
+      {% endif %}
+    </div>
+  </div>
+  <h1>{{ profile.name }}</h1>
+  <div class="row" style="gap:8px"><span class="handle">@{{ profile_user.username }}</span>{% if follows_you %}<span class="pill-note">Follows you</span>{% endif %}{% if profile.is_private %}<span class="pill-note">{% icon "lock" %}Private</span>{% endif %}</div>
+  {% if profile.bio %}<p class="bio">{{ profile.bio|rich_text }}</p>{% endif %}
+  <div class="facts">
+    {% if profile.location %}<span>{% icon "map-pin" %}{{ profile.location }}</span>{% endif %}
+    {% if profile.website %}<a href="{{ profile.website }}" rel="nofollow ugc noopener" target="_blank">{% icon "link-2" %}{{ profile.website|cut:"https://"|cut:"http://"|truncatechars:40 }}</a>{% endif %}
+    <span>{% icon "calendar" %}Joined {{ profile_user.date_joined|date:"F Y" }}</span>
+  </div>
+  <div class="counts">
+    <span><strong>{{ stats.posts|compact }}</strong> post{{ stats.posts|pluralize }}</span>
+    {% if can_view %}
+    <a href="{% url 'followers' profile_user.username %}"><strong data-followers-count>{{ stats.followers|compact }}</strong> follower{{ stats.followers|pluralize }}</a>
+    <a href="{% url 'following' profile_user.username %}"><strong>{{ stats.following|compact }}</strong> following</a>
+    {% else %}
+    <span><strong data-followers-count>{{ stats.followers|compact }}</strong> follower{{ stats.followers|pluralize }}</span>
+    <span><strong>{{ stats.following|compact }}</strong> following</span>
+    {% endif %}
+  </div>
+</section>
+{% if can_view %}
+<nav class="tabs" aria-label="Profile sections">
+  <a class="tab{% if tab == 'posts' %} is-active{% endif %}" href="?tab=posts"{% if tab == 'posts' %} aria-current="page"{% endif %}>Posts</a>
+  <a class="tab{% if tab == 'media' %} is-active{% endif %}" href="?tab=media"{% if tab == 'media' %} aria-current="page"{% endif %}>Media</a>
+</nav>
+<div data-list>{% include "partials/post_items.html" %}</div>
+{% if not posts and page.number == 1 %}
+  {% if is_own %}{% url 'compose' as compose_url %}{% include "partials/empty.html" with icon_name="square-pen" title="You haven't posted yet" body="Your posts and reposts will appear here." action_url=compose_url action_label="Write a post" %}
+  {% else %}{% include "partials/empty.html" with icon_name="square-pen" title="No posts yet" %}{% endif %}
+{% endif %}
+{% else %}
+<div class="lock-note">{% icon "lock" %}<h2 class="section-title">This account is private</h2><p class="secondary">Follow @{{ profile_user.username }} to see their posts. They'll need to approve your request.</p></div>
+{% endif %}
+{% endblock %}
+{% block aside %}{% endblock %}

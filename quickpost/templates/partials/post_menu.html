@@ -1,0 +1,16 @@
+{% load quickpost %}
+<div class="menu-wrap post-menu">
+  <button class="icon-btn" type="button" data-menu="post-menu-{{ p.pk }}" aria-haspopup="true" aria-expanded="false" aria-label="More options">{% icon "ellipsis" %}</button>
+  <div class="menu menu-right" id="post-menu-{{ p.pk }}" role="menu">
+    <button class="menu-item" type="button" role="menuitem" data-action="copy-link" data-share-url="{{ request.scheme }}://{{ request.get_host }}{{ p.get_absolute_url }}">{% icon "link" %}Copy link</button>
+    {% if user.is_authenticated %}
+    {% if p.user_id == user.pk %}
+      {% if not p.is_plain_repost %}<a class="menu-item" role="menuitem" href="{% url 'post_edit' p.pk %}">{% icon "pencil" %}Edit</a>{% endif %}
+      <a class="menu-item danger" role="menuitem" href="{% url 'post_delete' p.pk %}" data-action="delete-post" data-url="{% url 'post_delete' p.pk %}">{% icon "trash-2" %}Delete</a>
+    {% else %}
+      <button class="menu-item" type="button" role="menuitem" data-action="report" data-target-type="post" data-target-id="{{ p.pk }}">{% icon "flag" %}Report post</button>
+      <button class="menu-item danger" type="button" role="menuitem" data-action="block" data-url="{% url 'toggle_block' p.user.username %}" data-username="{{ p.user.username }}">{% icon "ban" %}Block @{{ p.user.username }}</button>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
