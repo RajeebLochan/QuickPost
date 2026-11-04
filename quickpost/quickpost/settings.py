@@ -100,8 +100,9 @@ ASGI_APPLICATION = "quickpost.asgi.application"
 
 # Database: SQLite by default, any DATABASE_URL (e.g. postgres://...) otherwise.
 DATABASES = {
-    "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+    # An empty DATABASE_URL (as in .env.example) means "use the SQLite default".
+    "default": dj_database_url.parse(
+        os.environ.get("DATABASE_URL", "").strip() or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=env_int("DATABASE_CONN_MAX_AGE", 60),
         conn_health_checks=True,
     )
