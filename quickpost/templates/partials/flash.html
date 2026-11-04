@@ -1,0 +1,4 @@
+{% if messages %}
+<script type="application/json" id="flash-data">[{% for message in messages %}{"text": "{{ message|escapejs }}", "level": "{{ message.level_tag|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]</script>
+<noscript>{% for message in messages %}<div class="flash {{ message.level_tag }}">{{ message }}</div>{% endfor %}</noscript>
+{% endif %}

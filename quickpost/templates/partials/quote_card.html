@@ -1,0 +1,8 @@
+{% if quote %}
+<figure class="postcard{% if large %} postcard-lg{% endif %}" style="margin:0">
+  <span class="stamp" aria-hidden="true"><span>Q</span></span>
+  <div class="kicker">Today's line, after the Ramayana and Mahabharata</div>
+  <blockquote>{{ quote.text }}</blockquote>
+  <figcaption>{{ quote.author }}</figcaption>
+</figure>
+{% endif %}

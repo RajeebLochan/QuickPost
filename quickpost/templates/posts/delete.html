@@ -1,0 +1,16 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}Delete post · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head"><a class="icon-btn" href="{{ post.get_absolute_url }}" aria-label="Back">{% icon "arrow-left" %}</a><h1 class="page-title">Delete post</h1></header>
+<div class="settings-section">
+  <h2>Delete this post?</h2>
+  <p>It will be removed from your profile, everyone's feeds and search, along with its comments. This can't be undone.</p>
+  <blockquote class="embed" style="margin:16px 0 0">{{ post.content|default:"(photo post)"|truncatechars:200 }}</blockquote>
+  <form method="post" class="form-actions" style="justify-content:flex-start">{% csrf_token %}
+    <a class="btn btn-ghost" href="{{ post.get_absolute_url }}">Cancel</a>
+    <button class="btn btn-danger" type="submit">Delete post</button>
+  </form>
+</div>
+{% endblock %}
+{% block aside %}{% endblock %}

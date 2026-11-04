@@ -1,0 +1,16 @@
+{% load quickpost %}
+<form class="composer" method="post" action="{% url 'compose' %}" enctype="multipart/form-data" data-composer>
+  {% csrf_token %}
+  {% avatar user %}
+  <div class="composer-body">
+    <label class="visually-hidden" for="composer-text">Post text</label>
+    <textarea id="composer-text" name="content" rows="2" maxlength="{{ POST_MAX_LENGTH }}" placeholder="What's happening" data-count-to="composer-counter" data-autogrow></textarea>
+    <div class="previews" data-previews></div>
+    <div class="composer-tools">
+      <label class="icon-btn file-pick" data-tip="Add photos">{% icon "image" %}<span class="visually-hidden">Add photos</span><input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif" multiple data-image-input data-max="{{ MAX_IMAGES_PER_POST }}"></label>
+      <span class="spacer"></span>
+      <span class="counter" id="composer-counter" aria-live="polite" data-max="{{ POST_MAX_LENGTH }}"></span>
+      <button class="btn btn-primary" type="submit" data-submit disabled>Post</button>
+    </div>
+  </div>
+</form>

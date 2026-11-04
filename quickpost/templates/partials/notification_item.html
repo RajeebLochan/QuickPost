@@ -1,0 +1,10 @@
+{% load quickpost %}
+<div class="notice{% if not n.is_read %} is-unread{% endif %}">
+  {% avatar n.actor %}
+  <div>
+    <p class="text"><strong>{{ n.actor.profile.name }}</strong> {{ n.get_verb_display }}</p>
+    {% if n.comment %}<p class="snippet">{{ n.comment.content }}</p>{% elif n.post and n.post.content %}<p class="snippet">{{ n.post.content }}</p>{% endif %}
+  </div>
+  <time class="meta time" datetime="{{ n.created_at|date:'c' }}">{{ n.created_at|ago }}</time>
+  <a class="cover-link" href="{% url 'open_notification' n.pk %}"><span class="visually-hidden">Open</span></a>
+</div>

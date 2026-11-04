@@ -1,0 +1,7 @@
+{% extends "app.html" %}
+{% block title %}Saved · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head"><h1 class="page-title">Saved<span class="sub">Only you can see what you've saved</span></h1></header>
+<div data-list>{% include "partials/post_items.html" %}</div>
+{% if not posts and page.number == 1 %}{% include "partials/empty.html" with icon_name="bookmark" title="Nothing saved yet" body="Tap the bookmark on any post to keep it here." %}{% endif %}
+{% endblock %}

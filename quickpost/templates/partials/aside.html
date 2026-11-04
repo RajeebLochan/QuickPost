@@ -1,0 +1,20 @@
+{% load quickpost %}
+<div class="aside-inner">
+  <form class="search-input" action="{% url 'search' %}" role="search">{% icon "search" %}<input type="search" name="q" placeholder="Search" aria-label="Search people, posts and tags"></form>
+  {% include "partials/quote_card.html" %}
+  {% if suggestions %}
+  <section class="panel">
+    <div class="panel-head"><h2 class="section-title">People to follow</h2><a class="meta" href="{% url 'search' %}">More</a></div>
+    <div class="panel-body">{% for u in suggestions %}{% include "partials/user_row.html" %}{% endfor %}</div>
+  </section>
+  {% endif %}
+  {% if trending %}
+  <section class="panel">
+    <div class="panel-head"><h2 class="section-title">Trending this week</h2></div>
+    <div class="panel-body" style="padding-top:4px">
+      {% for tag in trending %}<a class="trend" href="{{ tag.get_absolute_url }}"><span>#{{ tag.name }}</span><span class="meta">{{ tag.uses }} post{{ tag.uses|pluralize }}</span></a>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  <nav class="footer-links" aria-label="Footer"><a href="{% url 'settings_privacy' %}">Privacy</a><a href="{% url 'settings_account' %}">Account</a><span>QuickPost</span></nav>
+</div>

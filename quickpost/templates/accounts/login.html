@@ -1,0 +1,16 @@
+{% extends "accounts/auth.html" %}
+{% block title %}Log in · QuickPost{% endblock %}
+{% block auth %}
+<h1>Log in</h1>
+<p class="lead">Pick up where your conversations left off.</p>
+<form method="post" novalidate data-submit-once>
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  {% if form.non_field_errors %}<div class="form-errors" role="alert">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <div class="field{% if form.username.errors %} has-error{% endif %}" style="margin-top:20px"><label class="label" for="id_username">Username</label><input type="text" name="username" id="id_username" value="{{ form.username.value|default:'' }}" autocomplete="username" autocapitalize="none" required autofocus></div>
+  <div class="field{% if form.password.errors %} has-error{% endif %}"><label class="label" for="id_password">Password</label><input type="password" name="password" id="id_password" autocomplete="current-password" required></div>
+  <p style="margin-top:8px"><a class="meta" href="{% url 'password_reset' %}">Forgot password?</a></p>
+  <button class="btn btn-primary btn-lg btn-block" style="margin-top:24px" type="submit">Log in</button>
+</form>
+<p class="switch">New to QuickPost? <a href="{% url 'register' %}">Create an account</a></p>
+{% endblock %}

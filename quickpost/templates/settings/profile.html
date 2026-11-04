@@ -1,0 +1,29 @@
+{% extends "settings/base.html" %}
+{% load quickpost %}
+{% block title %}Edit profile · QuickPost{% endblock %}
+{% block settings %}
+<section class="settings-section">
+  <h2>Public profile</h2>
+  <p>Everything here is visible on your profile{% if user.profile.is_private %}, even while your account is private{% endif %}.</p>
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+    <div class="field{% if form.profile_image.errors %} has-error{% endif %}">
+      <span class="label">Photo</span>
+      <div class="image-field">{% avatar user "lg" %}<div><input type="file" name="profile_image" id="id_profile_image" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Upload a profile photo"><p class="help">Square photos work best. JPEG, PNG, WebP or GIF, up to 5 MB.</p></div></div>
+      {% for e in form.profile_image.errors %}<p class="error-text">{{ e }}</p>{% endfor %}
+    </div>
+    <div class="field{% if form.cover_image.errors %} has-error{% endif %}">
+      <span class="label">Cover</span>
+      <div class="cover-preview">{% if user.profile.cover_image %}<img src="{{ user.profile.cover_image.url }}" alt="">{% endif %}</div>
+      <input type="file" name="cover_image" id="id_cover_image" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Upload a cover image">
+      {% for e in form.cover_image.errors %}<p class="error-text">{{ e }}</p>{% endfor %}
+    </div>
+    {% include "partials/field.html" with field=form.display_name %}
+    {% include "partials/field.html" with field=form.bio %}
+    {% include "partials/field.html" with field=form.location %}
+    {% include "partials/field.html" with field=form.website %}
+    <div class="form-actions"><a class="btn btn-ghost" href="{% url 'profile' user.username %}">Cancel</a><button class="btn btn-primary" type="submit">Save profile</button></div>
+  </form>
+</section>
+{% endblock %}

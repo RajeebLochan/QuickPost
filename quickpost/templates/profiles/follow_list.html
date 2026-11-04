@@ -1,0 +1,15 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}{% if which == 'followers' %}Followers{% else %}Following{% endif %} · @{{ profile_user.username }} · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head"><a class="icon-btn" href="{% url 'profile' profile_user.username %}" aria-label="Back to profile">{% icon "arrow-left" %}</a><h1 class="page-title">{{ profile_user.profile.name }}<span class="sub">@{{ profile_user.username }}</span></h1></header>
+<nav class="tabs" aria-label="Connections">
+  <a class="tab{% if which == 'followers' %} is-active{% endif %}" href="{% url 'followers' profile_user.username %}">{{ stats.followers|compact }} Follower{{ stats.followers|pluralize }}</a>
+  <a class="tab{% if which == 'following' %} is-active{% endif %}" href="{% url 'following' profile_user.username %}">{{ stats.following|compact }} Following</a>
+</nav>
+<div data-list>{% include "partials/user_items.html" %}</div>
+{% if not users and page.number == 1 %}
+  {% if which == 'followers' %}{% include "partials/empty.html" with icon_name="user" title="No followers yet" %}{% else %}{% include "partials/empty.html" with icon_name="user" title="Not following anyone yet" %}{% endif %}
+{% endif %}
+{% endblock %}
+{% block aside %}{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}Messages · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head" style="display:block">
+  <h1 class="page-title" style="margin-bottom:8px">Messages</h1>
+  <form class="search-input" role="search">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Search conversations" aria-label="Search conversations"></form>
+</header>
+<div style="padding-top:8px" data-inbox>
+  {% for c in conversations %}
+  <a class="inbox-item{% if c.unread %} is-unread{% endif %}" href="{% url 'chat_room' c.pk %}" data-conversation="{{ c.pk }}">
+    {% avatar c.other %}
+    <span class="who">
+      <span class="line"><span class="name">{{ c.other.profile.name }}</span><span class="meta">@{{ c.other.username }}</span><time class="time" datetime="{{ c.last_message_at|date:'c' }}">{{ c.last_message_at|ago }}</time></span>
+      <span class="line"><span class="preview-text" data-preview>{% if c.last_sender == user.pk %}You: {% endif %}{{ c.last_text|truncatechars:80 }}</span>{% if c.unread %}<span class="badge" style="margin-left:auto">{{ c.unread }}</span>{% endif %}</span>
+    </span>
+  </a>
+  {% empty %}
+    {% if query %}{% include "partials/empty.html" with icon_name="search" title="No conversations match" %}
+    {% else %}{% url 'search' as search_url %}{% include "partials/empty.html" with icon_name="message-circle" title="No messages yet" body="Open someone's profile and choose Message to start a conversation." action_url=search_url action_label="Find people" %}{% endif %}
+  {% endfor %}
+  {% if page.has_next %}<div class="load-more"><a class="btn btn-outline" href="?{% querystring page=page.next_number %}">Older conversations</a></div>{% endif %}
+</div>
+{% endblock %}
+{% block aside %}{% endblock %}

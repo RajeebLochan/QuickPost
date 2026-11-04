@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="auth">
+  <div class="auth-form-side">
+    <a class="brand" href="{% url 'home' %}"><span class="stamp-mark" aria-hidden="true">Q</span><span>QuickPost</span></a>
+    <main class="auth-form-wrap" id="main">{% block auth %}{% endblock %}</main>
+  </div>
+  <div class="auth-art" aria-hidden="true">
+    <figure class="postcard postcard-lg" style="margin:0">
+      <span class="stamp"><span>Q</span></span>
+      <div class="kicker">Today's line, after the Ramayana and Mahabharata</div>
+      <blockquote>{{ daily_quote.text }}</blockquote>
+      <figcaption>{{ daily_quote.author }}</figcaption>
+    </figure>
+  </div>
+</div>
+{% endblock %}

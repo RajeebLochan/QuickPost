@@ -1,0 +1,22 @@
+{% load quickpost %}
+<div class="actions" data-actions="{{ p.pk }}">
+  <button class="action like" type="button" data-action="react" data-url="{% url 'post_react' p.pk 'like' %}" aria-pressed="{{ p.viewer_liked|yesno:'true,false' }}" aria-label="Like">{% icon "heart" %}<span class="count" data-count="likes_count">{% if p.likes_total %}{{ p.likes_total }}{% endif %}</span></button>
+  <button class="action dislike" type="button" data-action="react" data-url="{% url 'post_react' p.pk 'dislike' %}" aria-pressed="{{ p.viewer_disliked|yesno:'true,false' }}" aria-label="Dislike">{% icon "thumbs-down" %}<span class="count" data-count="dislikes_count">{% if p.dislikes_total %}{{ p.dislikes_total }}{% endif %}</span></button>
+  <a class="action" href="{{ p.get_absolute_url }}#comments" aria-label="Comments">{% icon "message-square" %}<span class="count" data-count="comments_count">{% if p.comments_total %}{{ p.comments_total }}{% endif %}</span></a>
+  <div class="menu-wrap">
+    <button class="action repost" type="button" data-menu="repost-{{ p.pk }}" aria-haspopup="true" aria-expanded="false" aria-pressed="{{ p.viewer_reposted|yesno:'true,false' }}" aria-label="Repost">{% icon "repeat-2" %}<span class="count" data-count="reposts_count">{% if p.reposts_total %}{{ p.reposts_total }}{% endif %}</span></button>
+    <div class="menu menu-left" id="repost-{{ p.pk }}" role="menu">
+      {% if p.user_id == user.pk %}
+      <span class="menu-item muted" role="menuitem" aria-disabled="true">{% icon "repeat-2" %}You can't repost your own post</span>
+      {% elif p.user.profile.is_private %}
+      <span class="menu-item muted" role="menuitem" aria-disabled="true">{% icon "lock" %}Private posts can't be reposted</span>
+      {% else %}
+      <button class="menu-item" type="button" role="menuitem" data-action="repost" data-url="{% url 'post_repost' p.pk %}">{% icon "repeat-2" %}<span data-repost-label>{% if p.viewer_reposted %}Undo repost{% else %}Repost{% endif %}</span></button>
+      <a class="menu-item" role="menuitem" href="{% url 'compose' %}?quote={{ p.pk }}">{% icon "quote" %}Quote</a>
+      {% endif %}
+    </div>
+  </div>
+  <span class="push"></span>
+  <button class="action save" type="button" data-action="save" data-url="{% url 'post_save' p.pk %}" aria-pressed="{{ p.viewer_saved|yesno:'true,false' }}" aria-label="Save">{% icon "bookmark" %}</button>
+  <button class="action" type="button" data-action="share" data-share-url="{{ request.scheme }}://{{ request.get_host }}{{ p.get_absolute_url }}" data-share-title="Post by {{ p.user.profile.name }}" aria-label="Share">{% icon "share" %}</button>
+</div>

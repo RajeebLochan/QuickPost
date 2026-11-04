@@ -1,0 +1,7 @@
+{% load quickpost %}
+<div class="empty">
+  {% icon icon_name|default:"circle-alert" %}
+  <h2>{{ title }}</h2>
+  {% if body %}<p>{{ body }}</p>{% endif %}
+  {% if action_url %}<a class="btn btn-dark" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+</div>

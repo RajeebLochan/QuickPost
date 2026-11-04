@@ -1,0 +1,25 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}QuickPost{% endblock %}</title>
+  <meta name="description" content="{% block description %}Short posts, photos and direct messages with the people you follow.{% endblock %}">
+  <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#141415" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400&display=swap">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}"{% if user.is_authenticated %} data-user-id="{{ user.pk }}" data-username="{{ user.username }}"{% endif %} data-login-url="{% url 'login' %}">
+  {% include "partials/icons.svg" %}
+  {% block body %}{% endblock %}
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+  {% include "partials/flash.html" %}
+  <script src="{% static 'js/app.js' %}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

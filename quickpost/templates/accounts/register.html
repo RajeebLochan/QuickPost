@@ -1,0 +1,18 @@
+{% extends "accounts/auth.html" %}
+{% block title %}Create account · QuickPost{% endblock %}
+{% block auth %}
+<h1>Create your account</h1>
+<p class="lead">Post in 240 characters, share photos and message the people you follow.</p>
+<form method="post" novalidate data-submit-once>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="form-errors" role="alert">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <div style="margin-top:20px">
+  {% include "partials/field.html" with field=form.username %}
+  {% include "partials/field.html" with field=form.email %}
+  {% include "partials/field.html" with field=form.password1 %}
+  {% include "partials/field.html" with field=form.password2 %}
+  </div>
+  <button class="btn btn-primary btn-lg btn-block" style="margin-top:24px" type="submit">Create account</button>
+</form>
+<p class="switch">Already have an account? <a href="{% url 'login' %}">Log in</a></p>
+{% endblock %}

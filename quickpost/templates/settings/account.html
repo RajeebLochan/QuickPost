@@ -1,0 +1,39 @@
+{% extends "settings/base.html" %}
+{% load quickpost %}
+{% block title %}Account · QuickPost{% endblock %}
+{% block settings %}
+<section class="settings-section">
+  <h2>Username and email</h2>
+  {% if user.profile.email_verified %}<p>{% icon "shield-check" %} {{ user.email }} is confirmed.</p>
+  {% else %}
+  <div class="banner">{% icon "mail" %}<span>{{ user.email }} isn't confirmed yet. You can browse, but posting, commenting and messaging need a confirmed address.</span><form method="post" action="{% url 'resend_verification' %}">{% csrf_token %}<button class="btn btn-sm btn-outline" type="submit">Resend link</button></form></div>
+  {% endif %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/field.html" with field=form.username %}
+    {% include "partials/field.html" with field=form.email %}
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Save</button></div>
+  </form>
+</section>
+<section class="settings-section">
+  <h2>Password</h2>
+  <p>Use at least 8 characters that aren't easy to guess.</p>
+  <a class="btn btn-outline" style="margin-top:16px" href="{% url 'settings_password' %}">Change password</a>
+</section>
+<section class="settings-section">
+  <h2>Deactivate account</h2>
+  <p>Your profile, posts and comments are hidden until you log in again. Nothing is deleted.</p>
+  <form method="post" action="{% url 'deactivate_account' %}">
+    {% csrf_token %}
+    <div class="field"><label class="label" for="deactivate-password">Confirm with your password</label><input type="password" id="deactivate-password" name="password" autocomplete="current-password" required></div>
+    <div class="form-actions" style="justify-content:flex-start"><button class="btn btn-outline" type="submit">Deactivate</button></div>
+  </form>
+</section>
+<section class="settings-section">
+  <div class="danger-zone">
+    <h2>Delete account</h2>
+    <p class="secondary" style="margin-top:4px">Permanently removes your account, posts, photos, comments and messages.</p>
+    <a class="btn btn-danger-ghost" style="margin-top:16px" href="{% url 'delete_account' %}">Delete account</a>
+  </div>
+</section>
+{% endblock %}

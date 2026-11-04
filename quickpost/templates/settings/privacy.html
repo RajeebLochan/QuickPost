@@ -1,0 +1,24 @@
+{% extends "settings/base.html" %}
+{% load quickpost %}
+{% block title %}Privacy · QuickPost{% endblock %}
+{% block settings %}
+<section class="settings-section">
+  <h2>Account privacy</h2>
+  <p>With a private account, only people you approve see your posts, followers and following. Your name, photo and bio stay visible.</p>
+  <form method="post">
+    {% csrf_token %}
+    <label class="checkbox"><input type="checkbox" name="is_private"{% if form.initial.is_private %} checked{% endif %}><span><strong style="font-weight:500">Private account</strong><br><span class="help">Switching to public approves any pending follow requests.</span></span></label>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Save</button></div>
+  </form>
+</section>
+<section class="settings-section">
+  <h2>Blocked accounts</h2>
+  <p>Blocked people can't see your profile or posts, follow you, comment or message you.</p>
+  <div style="margin-top:8px">
+  {% for b in blocks %}
+    <div class="user-row">{% avatar b.blocked %}<div class="who"><span class="name">{{ b.blocked.profile.name }}</span><span class="handle">@{{ b.blocked.username }} · blocked {{ b.created_at|ago }}</span></div>
+      <form method="post" action="{% url 'toggle_block' b.blocked.username %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'settings_privacy' %}"><button class="btn btn-sm btn-outline" type="submit">Unblock</button></form></div>
+  {% empty %}<p class="meta" style="padding:8px 0">You haven't blocked anyone.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

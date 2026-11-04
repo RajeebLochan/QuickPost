@@ -1,0 +1,7 @@
+{% for tag in tags %}
+<a class="user-row" href="{{ tag.get_absolute_url }}">
+  <span class="avatar avatar-md" style="--hue: 20" aria-hidden="true">#</span>
+  <span class="who"><span class="name">#{{ tag.name }}</span><span class="handle">{{ tag.uses }} post{{ tag.uses|pluralize }}</span></span>
+</a>
+{% endfor %}
+{% include "partials/load_more.html" %}

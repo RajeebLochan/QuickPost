@@ -1,0 +1,10 @@
+{% load quickpost %}
+<div class="user-row">
+  <a href="{% url 'profile' u.username %}" tabindex="-1" aria-hidden="true">{% avatar u %}</a>
+  <div class="who">
+    <a class="name" href="{% url 'profile' u.username %}">{{ u.profile.name }}</a>
+    <span class="handle">@{{ u.username }}{% if u.mutual %} · {{ u.mutual }} mutual{% elif u.follower_total %} · {{ u.follower_total|compact }} follower{{ u.follower_total|pluralize }}{% endif %}</span>
+    {% if show_bio and u.profile.bio %}<p class="bio">{{ u.profile.bio }}</p>{% endif %}
+  </div>
+  {% include "partials/follow_button.html" %}
+</div>

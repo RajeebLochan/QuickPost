@@ -1,0 +1,30 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}New post · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head"><a class="icon-btn" href="{% url 'feed' %}" aria-label="Back">{% icon "arrow-left" %}</a><h1 class="page-title">{% if quote_of %}Quote post{% else %}New post{% endif %}</h1></header>
+{% if form.non_field_errors %}<div class="form-errors" style="margin-top:16px">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+<form class="composer" method="post" action="{% url 'compose' %}" enctype="multipart/form-data" data-composer>
+  {% csrf_token %}
+  {% if quote_of %}<input type="hidden" name="quote_of" value="{{ quote_of.pk }}">{% endif %}
+  {% avatar user %}
+  <div class="composer-body">
+    <label class="visually-hidden" for="compose-text">Post text</label>
+    <textarea id="compose-text" name="content" rows="5" maxlength="{{ POST_MAX_LENGTH }}" placeholder="{% if quote_of %}Add your thoughts{% else %}What's happening{% endif %}" data-count-to="compose-counter" data-autogrow autofocus>{{ form.content.value|default:"" }}</textarea>
+    {% for e in form.content.errors %}<p class="error-text">{{ e }}</p>{% endfor %}
+    {% for e in form.images.errors %}<p class="error-text">{{ e }}</p>{% endfor %}
+    <div class="previews" data-previews></div>
+    {% if quote_of %}{% with q=quote_of %}
+    <div class="embed"><div class="post-head"><span class="name">{{ q.user.profile.name }}</span><span class="handle">@{{ q.user.username }}</span></div>{% if q.content %}<div class="post-text">{{ q.content|truncatechars:200 }}</div>{% endif %}</div>
+    {% endwith %}{% endif %}
+    <div class="composer-tools">
+      {% if not quote_of %}<label class="icon-btn file-pick" data-tip="Add photos">{% icon "image" %}<span class="visually-hidden">Add photos</span><input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif" multiple data-image-input data-max="{{ MAX_IMAGES_PER_POST }}"></label>
+      <span class="meta">Up to {{ MAX_IMAGES_PER_POST }} photos, 5 MB each</span>{% endif %}
+      <span class="spacer"></span>
+      <span class="counter" id="compose-counter" aria-live="polite" data-max="{{ POST_MAX_LENGTH }}"></span>
+      <button class="btn btn-primary" type="submit" data-submit>Post</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block aside %}{% endblock %}

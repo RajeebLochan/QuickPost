@@ -1,0 +1,8 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}#{{ tag.name }} · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head"><a class="icon-btn" href="{% url 'explore' %}" aria-label="Back to Explore">{% icon "arrow-left" %}</a><h1 class="page-title">#{{ tag.name }}</h1></header>
+<div data-list>{% include "partials/post_items.html" %}</div>
+{% if not posts and page.number == 1 %}{% include "partials/empty.html" with icon_name="hash" title="No posts you can see" body="Posts with this tag are from accounts that are private or unavailable." %}{% endif %}
+{% endblock %}

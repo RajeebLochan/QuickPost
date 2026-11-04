@@ -1,0 +1,16 @@
+{% extends "settings/base.html" %}
+{% block title %}Delete account · QuickPost{% endblock %}
+{% block settings %}
+<section class="settings-section">
+  <div class="danger-zone">
+    <h2>Delete your account permanently</h2>
+    <p class="secondary" style="margin-top:4px">This deletes @{{ user.username }}, every post, photo, comment, message and follow. It can't be undone. If you only want a break, deactivate instead.</p>
+    <form method="post" novalidate style="margin-top:16px">
+      {% csrf_token %}
+      {% include "partials/field.html" with field=form.password %}
+      {% include "partials/field.html" with field=form.confirm_username %}
+      <div class="form-actions"><a class="btn btn-ghost" href="{% url 'settings_account' %}">Keep my account</a><button class="btn btn-danger" type="submit">Delete everything</button></div>
+    </form>
+  </div>
+</section>
+{% endblock %}

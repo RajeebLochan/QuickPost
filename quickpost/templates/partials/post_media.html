@@ -1,0 +1,9 @@
+{% with count=images|length %}{% if count %}
+<div class="media media-{{ count }}">
+  {% for img in images %}
+  <a href="{{ img.image.url }}" data-lightbox aria-label="Open image {{ forloop.counter }} of {{ count }}">
+    <img src="{{ img.image.url }}" alt="{{ img.alt_text }}" loading="lazy" decoding="async"{% if img.width %} width="{{ img.width }}" height="{{ img.height }}"{% endif %}>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}{% endwith %}

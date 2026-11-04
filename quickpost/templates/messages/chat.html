@@ -1,0 +1,43 @@
+{% extends "app.html" %}
+{% load quickpost static %}
+{% block title %}{{ other.profile.name|default:"Conversation" }} · Messages · QuickPost{% endblock %}
+{% block body_class %}is-chat{% endblock %}
+{% block content %}
+<div class="chat" data-chat="{{ conversation.pk }}" data-other-id="{{ other.pk }}" data-history-url="{% url 'chat_history' conversation.pk %}" data-send-url="{% url 'chat_send' conversation.pk %}" data-read-url="{% url 'chat_read' conversation.pk %}">
+  <header class="page-head">
+    <a class="icon-btn" href="{% url 'inbox' %}" aria-label="Back to messages">{% icon "arrow-left" %}</a>
+    {% if other %}
+    <a href="{% url 'profile' other.username %}" tabindex="-1" aria-hidden="true">{% avatar other "sm" %}</a>
+    <div style="flex:1;min-width:0">
+      <a class="section-title" href="{% url 'profile' other.username %}">{{ other.profile.name }}</a>
+      <div class="chat-status" data-presence>{% if other.profile.last_seen %}<span class="dot" aria-hidden="true"></span><span data-presence-text>Active {{ other.profile.last_seen|ago }} ago</span>{% else %}<span data-presence-text>@{{ other.username }}</span>{% endif %}</div>
+    </div>
+    {% endif %}
+  </header>
+  <p class="conn" data-conn hidden>{% icon "wifi-off" %} Reconnecting. Messages will send over a regular connection meanwhile.</p>
+  <div class="chat-log" data-chat-log aria-live="polite" aria-label="Messages">
+    {% if has_more %}<div class="load-more" style="padding:8px 0"><button class="btn btn-sm btn-ghost" type="button" data-older>Load earlier messages</button></div>{% endif %}
+    {% for m in chat_messages %}
+      {% ifchanged m.created_at.date %}<div class="chat-day">{{ m.created_at|date:"j F Y" }}</div>{% endifchanged %}
+      <div class="bubble-row{% if m.sender_id == user.pk %} mine{% endif %}" data-message="{{ m.pk }}" data-day="{{ m.created_at|date:'Y-m-d' }}">
+        <div class="bubble">{{ m.content }}</div>
+        <div class="bubble-meta"><time datetime="{{ m.created_at|date:'c' }}">{{ m.created_at|time:"H:i" }}</time>{% if m.sender_id == user.pk %}<span class="{% if m.is_read %}read{% endif %}" data-receipt>{% if m.is_read %}Seen{% else %}Sent{% endif %}</span>{% endif %}</div>
+      </div>
+    {% empty %}
+      <div class="empty" data-empty-chat>{% icon "message-circle" %}<h2>Say hello</h2><p>Messages are only visible to you and {{ other.profile.name }}.</p></div>
+    {% endfor %}
+  </div>
+  <div class="typing" data-typing aria-live="polite"></div>
+  {% if blocked %}
+  <p class="banner">{% icon "ban" %}You can't message this account.</p>
+  {% else %}
+  <form class="chat-form" data-chat-form>
+    <label class="visually-hidden" for="chat-input">Message</label>
+    <textarea id="chat-input" name="content" rows="1" maxlength="1000" placeholder="Message" required data-autogrow></textarea>
+    <button class="btn btn-dark" type="submit" aria-label="Send">{% icon "send" %}</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
+{% block aside %}{% endblock %}
+{% block scripts %}<script src="{% static 'js/chat.js' %}" defer></script>{% endblock %}

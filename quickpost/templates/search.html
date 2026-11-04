@@ -1,0 +1,39 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}{% if query %}{{ query }} · {% endif %}Search · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head" style="display:block">
+  <form class="search-input" action="{% url 'search' %}" role="search">
+    {% icon "search" %}
+    <input type="search" name="q" value="{{ query }}" placeholder="Search people, posts or #tags" aria-label="Search" autofocus>
+    <input type="hidden" name="type" value="{{ kind }}">
+  </form>
+</header>
+{% if query %}
+<nav class="tabs" aria-label="Result type">
+  <a class="tab{% if kind == 'people' %} is-active{% endif %}" href="?q={{ query|urlencode }}&type=people"{% if kind == 'people' %} aria-current="page"{% endif %}>People</a>
+  <a class="tab{% if kind == 'posts' %} is-active{% endif %}" href="?q={{ query|urlencode }}&type=posts"{% if kind == 'posts' %} aria-current="page"{% endif %}>Posts</a>
+  <a class="tab{% if kind == 'tags' %} is-active{% endif %}" href="?q={{ query|urlencode }}&type=tags"{% if kind == 'tags' %} aria-current="page"{% endif %}>Tags</a>
+</nav>
+<div data-list>
+  {% if kind == "people" %}{% include "partials/user_items.html" %}
+  {% elif kind == "posts" %}{% include "partials/post_items.html" %}
+  {% else %}{% include "partials/tag_items.html" %}{% endif %}
+</div>
+{% if not page.items and page.number == 1 %}
+  {% include "partials/empty.html" with icon_name="search" title="No results" body="Try a different spelling, or search another tab." %}
+{% endif %}
+{% else %}
+<section style="padding-top:16px">
+  <h2 class="section-title">People you might know</h2>
+  {% for u in people %}{% include "partials/user_row.html" with show_bio=True %}{% empty %}<p class="meta" style="padding:12px 0">No suggestions yet.</p>{% endfor %}
+</section>
+{% if trending %}
+<section style="padding-top:24px">
+  <h2 class="section-title">Trending this week</h2>
+  {% for tag in trending %}<a class="trend" href="{{ tag.get_absolute_url }}"><span>#{{ tag.name }}</span><span class="meta">{{ tag.uses }} post{{ tag.uses|pluralize }}</span></a>{% endfor %}
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}
+{% block aside %}{% include "partials/quote_card.html" %}{% endblock %}

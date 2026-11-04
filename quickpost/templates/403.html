@@ -1,0 +1,5 @@
+{% extends "error_base.html" %}
+{% block title %}Not allowed · QuickPost{% endblock %}
+{% block code %}403{% endblock %}
+{% block heading %}You can't open this{% endblock %}
+{% block text %}{{ exception|default:"This belongs to someone else, or the account owner has limited who can see it." }}{% endblock %}

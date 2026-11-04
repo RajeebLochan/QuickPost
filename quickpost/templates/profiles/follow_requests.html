@@ -1,0 +1,9 @@
+{% extends "app.html" %}
+{% load quickpost %}
+{% block title %}Follow requests · QuickPost{% endblock %}
+{% block content %}
+<header class="page-head"><a class="icon-btn" href="{% url 'notifications' %}" aria-label="Back to notifications">{% icon "arrow-left" %}</a><h1 class="page-title">Follow requests<span class="sub">People who asked to see your posts</span></h1></header>
+<div data-list>{% include "partials/follow_request_items.html" %}</div>
+{% if not requests and page.number == 1 %}{% include "partials/empty.html" with icon_name="user-check" title="No pending requests" %}{% endif %}
+{% endblock %}
+{% block aside %}{% endblock %}
