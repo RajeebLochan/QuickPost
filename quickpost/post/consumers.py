@@ -1,180 +1,127 @@
+"""One WebSocket per browser tab, at /ws/live/.
+
+Server -> client events: message, read, typing, notification.
+Client -> server actions:
+  {"action": "send", "conversation": id, "content": "..."}
+  {"action": "typing", "conversation": id, "typing": true|false}
+  {"action": "read", "conversation": id}
+"""
+
 import json
-from channels.generic.websocket import AsyncWebsocketConsumer
+import logging
+
 from channels.db import database_sync_to_async
-from django.contrib.auth.models import User
-from .models import Conversation, Message
+from channels.generic.websocket import AsyncWebsocketConsumer
+from django.conf import settings
+from django.core.cache import cache
+from django.core.exceptions import PermissionDenied, ValidationError
+
+from . import ratelimit, services
+from .models import Conversation
+from .realtime import user_group
+
+logger = logging.getLogger(__name__)
+
+PRESENCE_TTL = 60 * 60
 
 
-class ChatConsumer(AsyncWebsocketConsumer):
+def presence_key(user_id):
+    return f"presence:{user_id}"
+
+
+def is_online(user_id):
+    return (cache.get(presence_key(user_id)) or 0) > 0
+
+
+class LiveConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Get conversation ID from URL
-        self.conversation_id = self.scope['url_route']['kwargs']['conversation_id']
-        self.room_group_name = f'chat_{self.conversation_id}'
-        
-        # Get user from scope (requires authentication middleware)
-        self.user = self.scope["user"]
-        
-        # Check if user is authenticated
-        if not self.user.is_authenticated:
-            await self.close()
+        self.user = self.scope.get("user")
+        if self.user is None or not self.user.is_authenticated:
+            await self.close(code=4401)
             return
-        
-        # Check if user is participant in this conversation
-        is_participant = await self.check_conversation_participant()
-        if not is_participant:
-            await self.close()
-            return
-
-        # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
+        self.group = user_group(self.user.pk)
+        await self.channel_layer.group_add(self.group, self.channel_name)
         await self.accept()
+        await database_sync_to_async(self._presence)(1)
 
-    async def disconnect(self, close_code):
-        # Leave room group
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+    async def disconnect(self, code):
+        if getattr(self, "group", None):
+            await self.channel_layer.group_discard(self.group, self.channel_name)
+            await database_sync_to_async(self._presence)(-1)
 
-    # Receive message from WebSocket
-    async def receive(self, text_data):
+    def _presence(self, delta):
+        key = presence_key(self.user.pk)
+        cache.add(key, 0, PRESENCE_TTL)
         try:
-            text_data_json = json.loads(text_data)
-            message_content = text_data_json['message']
-            
-            # Save message to database
-            message = await self.save_message(message_content)
-            
-            if message:
-                # Send message to room group
-                await self.channel_layer.group_send(
-                    self.room_group_name,
-                    {
-                        'type': 'chat_message',
-                        'message': message_content,
-                        'sender': self.user.username,
-                        'sender_id': self.user.id,
-                        'timestamp': message.created_at.isoformat(),
-                        'message_id': message.id
-                    }
-                )
-        except json.JSONDecodeError:
-            # Handle invalid JSON
-            await self.send(text_data=json.dumps({
-                'error': 'Invalid message format'
-            }))
-        except Exception as e:
-            # Handle other errors
-            await self.send(text_data=json.dumps({
-                'error': 'Failed to send message'
-            }))
+            value = cache.incr(key, delta)
+        except ValueError:
+            value = max(delta, 0)
+            cache.set(key, value, PRESENCE_TTL)
+        if value < 0:
+            cache.set(key, 0, PRESENCE_TTL)
 
-    # Receive message from room group
-    async def chat_message(self, event):
-        message = event['message']
-        sender = event['sender']
-        sender_id = event['sender_id']
-        timestamp = event['timestamp']
-        message_id = event['message_id']
-
-        # Send message to WebSocket
-        await self.send(text_data=json.dumps({
-            'message': message,
-            'sender': sender,
-            'sender_id': sender_id,
-            'timestamp': timestamp,
-            'message_id': message_id
-        }))
-
-    @database_sync_to_async
-    def check_conversation_participant(self):
-        """Check if current user is a participant in the conversation"""
+    async def receive(self, text_data=None, bytes_data=None):
         try:
-            conversation = Conversation.objects.get(id=self.conversation_id)
-            return conversation.participants.filter(id=self.user.id).exists()
-        except Conversation.DoesNotExist:
-            return False
-
-    @database_sync_to_async
-    def save_message(self, message_content):
-        """Save message to database"""
-        try:
-            conversation = Conversation.objects.get(id=self.conversation_id)
-            
-            # Validate message content
-            if not message_content.strip():
-                return None
-            
-            if len(message_content) > 1000:
-                return None
-            
-            # Create and save message
-            message = Message.objects.create(
-                conversation=conversation,
-                sender=self.user,
-                content=message_content.strip()
-            )
-            
-            # Update conversation's updated_at timestamp
-            conversation.save()
-            
-            return message
-        except Conversation.DoesNotExist:
-            return None
-        except Exception:
-            return None
-
-    @database_sync_to_async
-    def mark_messages_as_read(self):
-        """Mark all messages in conversation as read for current user"""
-        try:
-            conversation = Conversation.objects.get(id=self.conversation_id)
-            # Mark messages as read (exclude messages from current user)
-            conversation.messages.filter(is_read=False).exclude(sender=self.user).update(is_read=True)
-        except Conversation.DoesNotExist:
-            pass
-
-
-class NotificationConsumer(AsyncWebsocketConsumer):
-    """Consumer for real-time notifications (optional for future use)"""
-    
-    async def connect(self):
-        self.user = self.scope["user"]
-        
-        if not self.user.is_authenticated:
-            await self.close()
+            data = json.loads(text_data or "")
+            action = data["action"]
+            conversation_id = int(data["conversation"])
+        except (ValueError, KeyError, TypeError):
+            await self._error("Malformed event.")
             return
-        
-        # Create a unique group for this user
-        self.notification_group_name = f'notifications_{self.user.id}'
-        
-        # Join notification group
-        await self.channel_layer.group_add(
-            self.notification_group_name,
-            self.channel_name
+
+        handler = {"send": self._send, "typing": self._typing, "read": self._read}.get(action)
+        if handler is None:
+            await self._error(f"Unknown action: {action}")
+            return
+        try:
+            await handler(conversation_id, data)
+        except (ValidationError, services.ServiceError) as exc:
+            await self._error(" ".join(getattr(exc, "messages", [str(exc)])), data.get("client_id"))
+        except (PermissionDenied, Conversation.DoesNotExist):
+            await self._error("You're not part of this conversation.", data.get("client_id"))
+        except ratelimit.RateLimited:
+            await self._error("You're sending messages too quickly.", data.get("client_id"))
+
+    async def _send(self, conversation_id, data):
+        message = await database_sync_to_async(self._save_message)(conversation_id, data.get("content"))
+        # Delivery to every participant (including this tab) happens through
+        # the user groups once the transaction commits; just acknowledge here.
+        await self.send(
+            text_data=json.dumps({"type": "ack", "client_id": data.get("client_id"), "id": message.pk})
         )
-        
-        await self.accept()
 
-    async def disconnect(self, close_code):
-        # Leave notification group
-        if hasattr(self, 'notification_group_name'):
-            await self.channel_layer.group_discard(
-                self.notification_group_name,
-                self.channel_name
-            )
+    def _save_message(self, conversation_id, content):
+        ratelimit.check("message_send", f"u{self.user.pk}", 30, 60)
+        if not self.user.profile.email_verified and settings.QUICKPOST["REQUIRE_EMAIL_VERIFICATION"]:
+            raise PermissionDenied
+        conversation = Conversation.objects.get(pk=conversation_id)
+        return services.send_message(conversation, self.user, content if isinstance(content, str) else "")
 
-    # Receive notification from group
-    async def notification_message(self, event):
-        notification_type = event['type']
-        message = event['message']
-        
-        # Send notification to WebSocket
-        await self.send(text_data=json.dumps({
-            'type': notification_type,
-            'message': message
-        }))
+    async def _typing(self, conversation_id, data):
+        others = await database_sync_to_async(self._other_participants)(conversation_id)
+        event = {
+            "type": "typing",
+            "conversation": conversation_id,
+            "user_id": self.user.pk,
+            "typing": bool(data.get("typing")),
+        }
+        for other_id in others:
+            await self.channel_layer.group_send(user_group(other_id), {"type": "live.event", "event": event})
+
+    def _other_participants(self, conversation_id):
+        conversation = Conversation.objects.get(pk=conversation_id)
+        services.ensure_participant(conversation, self.user)
+        return list(conversation.participants.exclude(pk=self.user.pk).values_list("pk", flat=True))
+
+    async def _read(self, conversation_id, data):
+        await database_sync_to_async(self._mark_read)(conversation_id)
+
+    def _mark_read(self, conversation_id):
+        conversation = Conversation.objects.get(pk=conversation_id)
+        services.mark_conversation_read(conversation, self.user)
+
+    async def live_event(self, event):
+        await self.send(text_data=json.dumps(event["event"]))
+
+    async def _error(self, message, client_id=None):
+        await self.send(text_data=json.dumps({"type": "error", "error": message, "client_id": client_id}))
