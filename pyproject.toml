@@ -1,0 +1,22 @@
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["quickpost/post/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ", "S", "SIM"]
+ignore = [
+  "S101",   # assert in tests
+  "S105",   # "dev-only-insecure-key" placeholder is intentional and refused outside DEBUG
+  "S308",   # mark_safe on text we escaped ourselves (rich_text)
+  "B904",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"quickpost/post/tests/*" = ["S106", "S107", "S311", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["post", "quickpost"]
+
+[tool.ruff.format]
+line-ending = "lf"
