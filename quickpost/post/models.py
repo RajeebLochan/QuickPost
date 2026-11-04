@@ -1,277 +1,353 @@
-from django.db import models
-from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-from PIL import Image
+import uuid
+from pathlib import PurePath
 
-# Create your models here.
-class Post(models.Model):
-    # get the user who created the post
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField(max_length=240)
-    photo = models.ImageField(upload_to='photos/', blank=True, null=True)
+from django.contrib.auth.models import User
+from django.db import models
+from django.db.models import Q
+from django.urls import reverse
+from django.utils import timezone
+
+POST_MAX_LENGTH = 240
+COMMENT_MAX_LENGTH = 500
+MESSAGE_MAX_LENGTH = 1000
+
+
+def _uuid_path(folder, filename):
+    suffix = PurePath(filename).suffix.lower()[:5] or ".jpg"
+    return f"{folder}/{timezone.now():%Y/%m}/{uuid.uuid4().hex}{suffix}"
+
+
+def avatar_upload_to(instance, filename):
+    return _uuid_path("avatars", filename)
+
+
+def cover_upload_to(instance, filename):
+    return _uuid_path("covers", filename)
+
+
+def post_image_upload_to(instance, filename):
+    return _uuid_path("posts", filename)
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    display_name = models.CharField(max_length=50, blank=True)
+    bio = models.TextField(max_length=500, blank=True)
+    profile_image = models.ImageField(upload_to=avatar_upload_to, blank=True)
+    cover_image = models.ImageField(upload_to=cover_upload_to, blank=True)
+    location = models.CharField(max_length=100, blank=True)
+    website = models.URLField(max_length=200, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
+    is_private = models.BooleanField(default=False, help_text="Only approved followers can see posts.")
+    email_verified = models.BooleanField(default=False)
+    onboarded = models.BooleanField(default=False)
+    is_deactivated = models.BooleanField(default=False)
+    deactivated_at = models.DateTimeField(null=True, blank=True)
+    last_seen = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
-    dislikes = models.ManyToManyField(User, related_name='disliked_posts', blank=True)
 
-    class Meta:
-        ordering = ['-created_at']  # Default ordering by newest first
+    following = models.ManyToManyField("self", symmetrical=False, related_name="followers", blank=True)
 
     def __str__(self):
-        # return the username and the content of the post
-        # limiting the content to 20 characters for better readability
+        return f"{self.user.username}'s profile"
+
+    def get_absolute_url(self):
+        return reverse("profile", args=[self.user.username])
+
+    @property
+    def name(self):
+        return self.display_name or self.user.get_full_name() or self.user.username
+
+    @property
+    def avatar_url(self):
+        return self.profile_image.url if self.profile_image else ""
+
+    @property
+    def initial(self):
+        return (self.name or "?")[:1].upper()
+
+    def is_following(self, other_profile):
+        return self.following.filter(pk=other_profile.pk).exists()
+
+
+class Hashtag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"#{self.name}"
+
+    def get_absolute_url(self):
+        return reverse("hashtag", args=[self.name])
+
+
+class Post(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
+    content = models.TextField(max_length=POST_MAX_LENGTH, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
+    likes = models.ManyToManyField(User, related_name="liked_posts", blank=True)
+    dislikes = models.ManyToManyField(User, related_name="disliked_posts", blank=True)
+    repost_of = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.CASCADE, related_name="reposts"
+    )
+    hashtags = models.ManyToManyField(Hashtag, related_name="posts", blank=True)
+    mentions = models.ManyToManyField(User, related_name="mentioned_in", blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "-created_at"], name="post_user_created_idx")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "repost_of"],
+                condition=Q(repost_of__isnull=False, content=""),
+                name="unique_plain_repost",
+            )
+        ]
+
+    def __str__(self):
         return f"{self.user.username} - {self.content[:20]}"
 
-    def clean(self):
-        """Validate post data"""
-        if not self.content.strip():
-            raise ValidationError('Post content cannot be empty.')
-        if len(self.content) > 240:
-            raise ValidationError('Post content cannot exceed 240 characters.')
-
-    def get_likes_count(self):
-        """Get total number of likes"""
-        return self.likes.count()
-
-    def get_dislikes_count(self):
-        """Get total number of dislikes"""
-        return self.dislikes.count()
-
-    def get_comments_count(self):
-        """Get total number of comments"""
-        return self.comments.count()
-
-    def is_liked_by(self, user):
-        """Check if user has liked this post"""
-        return self.likes.filter(id=user.id).exists()
-
-    def is_disliked_by(self, user):
-        """Check if user has disliked this post"""
-        return self.dislikes.filter(id=user.id).exists()
-
-    def toggle_like(self, user):
-        """Toggle like status for a user"""
-        if self.is_liked_by(user):
-            self.likes.remove(user)
-            return False
-        else:
-            self.likes.add(user)
-            self.dislikes.remove(user)  # Remove dislike if exists
-            return True
-
-    def toggle_dislike(self, user):
-        """Toggle dislike status for a user"""
-        if self.is_disliked_by(user):
-            self.dislikes.remove(user)
-            return False
-        else:
-            self.dislikes.add(user)
-            self.likes.remove(user)  # Remove like if exists
-            return True
+    def get_absolute_url(self):
+        return reverse("post_detail", args=[self.pk])
 
     @property
-    def engagement_score(self):
-        """Calculate engagement based on likes, dislikes, and comments"""
-        return self.get_likes_count() + self.get_comments_count() - self.get_dislikes_count()
+    def is_plain_repost(self):
+        return self.repost_of_id is not None and not self.content
 
-    @property
-    def time_since_created(self):
-        """Get time elapsed since post creation"""
-        return timezone.now() - self.created_at
 
-    @property
-    def net_likes(self):
-        """Get net likes (likes - dislikes)"""
-        return self.get_likes_count() - self.get_dislikes_count()
+class PostImage(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="images")
+    # Dimensions are recorded when the upload is processed (see services.create_post).
+    # No width_field/height_field: Django would open the file on every row load,
+    # and a missing file would then break whole pages.
+    image = models.ImageField(upload_to=post_image_upload_to)
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
+    alt_text = models.CharField(max_length=200, blank=True)
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "id"]
+
+    def __str__(self):
+        return f"Image {self.position} of post {self.post_id}"
 
 
 class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField(max_length=500)  # Added max length
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
+    content = models.TextField(max_length=COMMENT_MAX_LENGTH)
     created_at = models.DateTimeField(auto_now_add=True)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)  # For replies
+    parent = models.ForeignKey(
+        "self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies"
+    )
 
     class Meta:
-        ordering = ['created_at']  # Order comments by oldest first
+        ordering = ["created_at"]
+        indexes = [models.Index(fields=["post", "parent", "created_at"], name="comment_thread_idx")]
 
     def __str__(self):
         return f"{self.user.username}: {self.content[:20]}"
- 
-    def clean(self):
-        """Validate comment data"""
-        if not self.content.strip():
-            raise ValidationError('Comment content cannot be empty.')
-        if len(self.content) > 500:
-            raise ValidationError('Comment content cannot exceed 500 characters.')
 
-    def is_reply(self):
-        """Check if this comment is a reply to another comment"""
-        return self.parent is not None
-
-    def get_replies(self):
-        """Get all replies to this comment"""
-        return Comment.objects.filter(parent=self)
-
-    def get_replies_count(self):
-        """Get total number of replies"""
-        return self.get_replies().count()
-
-    @property
-    def time_since_created(self):
-        """Get time elapsed since comment creation"""
-        return timezone.now() - self.created_at
-    
+    def get_absolute_url(self):
+        return f"{self.post.get_absolute_url()}#comment-{self.pk}"
 
 
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    bio = models.TextField(max_length=500, blank=True, help_text="Tell us about yourself")
-    profile_image = models.ImageField(upload_to='profile_pics/', default='profile_pics/default.jpg', blank=True)
-    location = models.CharField(max_length=100, blank=True)
-    website = models.URLField(max_length=200, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
+class Bookmark(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bookmarks")
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="bookmarks")
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    # Follow system
-    following = models.ManyToManyField(
-        'self', 
-        symmetrical=False, 
-        related_name='followers', 
-        blank=True,
-        help_text="Users that this user is following"
-    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [models.UniqueConstraint(fields=["user", "post"], name="unique_bookmark")]
 
     def __str__(self):
-        return f"{self.user.username}'s Profile"
+        return f"{self.user} saved post {self.post_id}"
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        
-        # Resize image if it's too large
-        if self.profile_image:
-            img = Image.open(self.profile_image.path)
-            if img.height > 300 or img.width > 300:
-                output_size = (300, 300)
-                img.thumbnail(output_size)
-                img.save(self.profile_image.path)
 
-    @property
-    def get_posts_count(self):
-        return self.user.post_set.count()
+class FollowRequest(models.Model):
+    from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_follow_requests")
+    to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="follow_requests")
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    @property
-    def get_followers_count(self):
-        """Get the number of followers"""
-        return self.followers.count()
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["from_user", "to_user"], name="unique_follow_request"),
+            models.CheckConstraint(
+                condition=~Q(from_user=models.F("to_user")), name="follow_request_not_self"
+            ),
+        ]
 
-    @property
-    def get_following_count(self):
-        """Get the number of users this user is following"""
-        return self.following.count()
+    def __str__(self):
+        return f"{self.from_user} -> {self.to_user}"
 
-    def is_following(self, user_profile):
-        """Check if this user is following another user"""
-        return self.following.filter(id=user_profile.id).exists()
 
-    def follow(self, user_profile):
-        """Follow another user"""
-        if not self.is_following(user_profile) and self != user_profile:
-            self.following.add(user_profile)
-            return True
-        return False
+class Block(models.Model):
+    blocker = models.ForeignKey(User, on_delete=models.CASCADE, related_name="blocks_made")
+    blocked = models.ForeignKey(User, on_delete=models.CASCADE, related_name="blocks_received")
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    def unfollow(self, user_profile):
-        """Unfollow another user"""
-        if self.is_following(user_profile):
-            self.following.remove(user_profile)
-            return True
-        return False
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["blocker", "blocked"], name="unique_block"),
+            models.CheckConstraint(condition=~Q(blocker=models.F("blocked")), name="block_not_self"),
+        ]
 
-    def toggle_follow(self, user_profile):
-        """Toggle follow status for another user"""
-        if self.is_following(user_profile):
-            self.unfollow(user_profile)
-            return False  # Now unfollowing
-        else:
-            self.follow(user_profile)
-            return True   # Now following
+    def __str__(self):
+        return f"{self.blocker} blocked {self.blocked}"
 
-# Signal to create profile automatically when user is created
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        UserProfile.objects.create(user=instance)
+class Report(models.Model):
+    class Reason(models.TextChoices):
+        SPAM = "spam", "Spam"
+        HARASSMENT = "harassment", "Harassment or bullying"
+        HATE = "hate", "Hate speech"
+        VIOLENCE = "violence", "Violence or threats"
+        NUDITY = "nudity", "Nudity or sexual content"
+        IMPERSONATION = "impersonation", "Impersonation"
+        OTHER = "other", "Something else"
 
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    if hasattr(instance, 'profile'):
-        instance.profile.save()
-    else:
-        UserProfile.objects.create(user=instance)
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        ACTIONED = "actioned", "Action taken"
+        DISMISSED = "dismissed", "Dismissed"
+
+    reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reports_made")
+    reason = models.CharField(max_length=20, choices=Reason.choices)
+    details = models.TextField(max_length=1000, blank=True)
+    post = models.ForeignKey(Post, null=True, blank=True, on_delete=models.SET_NULL, related_name="reports")
+    comment = models.ForeignKey(
+        Comment, null=True, blank=True, on_delete=models.SET_NULL, related_name="reports"
+    )
+    reported_user = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.CASCADE, related_name="reports_received"
+    )
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN, db_index=True)
+    resolution_note = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="reports_reviewed"
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Report #{self.pk} ({self.get_reason_display()})"
 
 
 class Conversation(models.Model):
-    """Model to represent a conversation between two users"""
-    participants = models.ManyToManyField(User, related_name='conversations')
+    participants = models.ManyToManyField(User, related_name="conversations")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+    last_message_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
     class Meta:
-        ordering = ['-updated_at']
-    
+        ordering = ["-updated_at"]
+
     def __str__(self):
-        participants_list = list(self.participants.all())
-        if len(participants_list) >= 2:
-            return f"Conversation between {participants_list[0].username} and {participants_list[1].username}"
-        return f"Conversation {self.id}"
-    
-    @property
-    def last_message(self):
-        """Get the last message in this conversation"""
-        return self.messages.order_by('-created_at').first()
-    
+        return f"Conversation {self.pk}"
+
+    def get_absolute_url(self):
+        return reverse("chat_room", args=[self.pk])
+
     def get_other_participant(self, user):
-        """Get the other participant in a two-person conversation"""
-        return self.participants.exclude(id=user.id).first()
-    
-    def has_unread_messages(self, user):
-        """Check if the conversation has unread messages for the user"""
-        return self.messages.filter(is_read=False).exclude(sender=user).exists()
+        for participant in self.participants.all():
+            if participant.pk != user.pk:
+                return participant
+        return None
 
 
 class Message(models.Model):
-    """Model to represent individual messages in conversations"""
-    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
-    content = models.TextField(max_length=1000)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="messages")
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_messages")
+    content = models.TextField(max_length=MESSAGE_MAX_LENGTH)
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
-    
+    read_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
-        ordering = ['created_at']
-    
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["conversation", "created_at"], name="message_conv_created_idx"),
+            models.Index(fields=["conversation", "is_read"], name="message_conv_unread_idx"),
+        ]
+
     def __str__(self):
         return f"Message from {self.sender.username}: {self.content[:30]}"
-    
-    def clean(self):
-        """Validate message data"""
-        if not self.content.strip():
-            raise ValidationError('Message content cannot be empty.')
-        if len(self.content) > 1000:
-            raise ValidationError('Message content cannot exceed 1000 characters.')
-    
+
+    def as_payload(self):
+        return {
+            "id": self.pk,
+            "conversation": self.conversation_id,
+            "content": self.content,
+            "sender": self.sender.username,
+            "sender_id": self.sender_id,
+            "timestamp": self.created_at.isoformat(),
+            "is_read": self.is_read,
+        }
+
+
+class Notification(models.Model):
+    class Verb(models.TextChoices):
+        FOLLOW = "follow", "followed you"
+        FOLLOW_REQUEST = "follow_request", "asked to follow you"
+        FOLLOW_ACCEPT = "follow_accept", "accepted your follow request"
+        LIKE = "like", "liked your post"
+        COMMENT = "comment", "commented on your post"
+        REPLY = "reply", "replied to your comment"
+        MENTION = "mention", "mentioned you"
+        REPOST = "repost", "reposted your post"
+        MESSAGE = "message", "sent you a message"
+
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications_sent")
+    verb = models.CharField(max_length=20, choices=Verb.choices)
+    post = models.ForeignKey(Post, null=True, blank=True, on_delete=models.CASCADE)
+    comment = models.ForeignKey(Comment, null=True, blank=True, on_delete=models.CASCADE)
+    conversation = models.ForeignKey(Conversation, null=True, blank=True, on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["recipient", "is_read", "-created_at"], name="notif_recipient_idx")]
+
+    def __str__(self):
+        return f"{self.actor} {self.get_verb_display()}"
+
     @property
-    def time_since_created(self):
-        """Get time elapsed since message creation"""
-        return timezone.now() - self.created_at
-    
-    def mark_as_read(self):
-        """Mark this message as read"""
-        self.is_read = True
-        self.save()
+    def target_url(self):
+        if self.verb == self.Verb.MESSAGE and self.conversation_id:
+            return reverse("chat_room", args=[self.conversation_id])
+        if self.verb == self.Verb.FOLLOW_REQUEST:
+            return reverse("follow_requests")
+        if self.comment_id:
+            return f"{reverse('post_detail', args=[self.post_id])}#comment-{self.comment_id}"
+        if self.post_id:
+            return reverse("post_detail", args=[self.post_id])
+        return reverse("profile", args=[self.actor.username])
+
+
+class DailyQuote(models.Model):
+    class Source(models.TextChoices):
+        GEMINI = "gemini", "Gemini"
+        MANUAL = "manual", "Manual"
+
+    text = models.CharField(max_length=300)
+    author = models.CharField(max_length=60)
+    source = models.CharField(max_length=10, choices=Source.choices, default=Source.GEMINI)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.text} - {self.author}"
